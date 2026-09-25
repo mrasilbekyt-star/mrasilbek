@@ -1,0 +1,27 @@
+{
+  "name": "EggHeist",
+  "tree": {
+    "$className": "DataModel",
+    "Workspace": {
+      "$className": "Workspace",
+      "$properties": {
+        "FilteringEnabled": true
+      }
+    },
+    "ServerScriptService": {
+      "$className": "ServerScriptService",
+      "EggHeistServer": {
+        "$path": "src/ServerScriptService/EggHeistServer.server.lua"
+      }
+    },
+    "StarterPlayer": {
+      "$className": "StarterPlayer",
+      "StarterPlayerScripts": {
+        "$className": "StarterPlayerScripts",
+        "EggHeistClient": {
+          "$path": "src/StarterPlayer/StarterPlayerScripts/EggHeistClient.client.lua"
+        }
+      }
+    }
+  }
+}
