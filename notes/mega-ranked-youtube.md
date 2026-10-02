@@ -67,3 +67,32 @@ Shorts sarlavha formati: `<#1 obyekt nomi> – Top N <...> in the World #Shorts`
 3. **Zaif joy:** kemalar va samolyotlar haqidagi Shorts'da ko'rish foizi past (34–47%).
 4. **Uzun videolar:** ko'rishlar juda kam, CTR asosan 1.5–3%. Thumbnail va sarlavhalarni
    kuchaytirish, kuchli Shorts'dan uzun videolarga "Related video" havolasi berish kerak.
+
+## Lifetime analitika (2026-10-02 holatiga)
+
+**Jami:** ~20 685 ko'rish · ~43 soat 50 daq tomosha vaqti · +28 obunachi · 269 layk ·
+5 izoh · 5 ulashish · 14 046 ko'rsatilish (impressions).
+
+| Format | Ko'rishlar | Tomosha vaqti | Layklar |
+| :--- | ---: | ---: | ---: |
+| Shorts | 98.9% (~19 517) | 91.1% (38 s 21 daq) | 99.6% (249) |
+| Uzun videolar | 1.1% (270) | 8.9% (3 s 46 daq) | 0.4% (1) |
+
+**Trafik manbalari:** Shorts lentasi 86.6% · YouTube qidiruvi 10.2% · Suggested 0.9% ·
+Browse 0.7%.
+
+**Geografiya (top 5):** AQSh 16.3% · Germaniya 11.5% · Indoneziya 6.4% · Filippin 5.9% ·
+Hindiston 5.5% (keyin Buyuk Britaniya, Malayziya, Kanada).
+
+**Xulosa:** kanal amalda Shorts kanali; ingliz tilidagi reyting mavzulari Tier-1 auditoriyani
+(AQSh, Germaniya) jalb qiladi; qidiruvdan 10%+ trafik — sarlavhalar qidiruvbop bo'lishi kerak.
+Zaif joylar: izoh/ulashish juda kam, obunaga aylanish past, uzun videolar deyarli ko'rilmaydi.
+
+## Strategiya (analitikaga asoslangan tavsiyalar)
+
+- Asosiy kuch Shorts'ga: 15–30 soniya, #1 oxirida, sarlavha shabloni saqlanadi.
+- Eng kuchli mavzular: kosmos, mega muhandislik (to'g'onlar, binolar), tezkor transport,
+  tabiat rekordlari (ko'llar, dengizlar). Kemalar/samolyotlar o'lchami — zaifroq (retention past).
+- Har Shorts oxirida savol ("Which one surprised you?") + pinned comment — izohlarni oshirish.
+- Uzun video = bir mavzudagi Shorts seriyasining kengaytirilgan "Top 10" versiyasi;
+  Shorts'ga "Related video" orqali ulanadi. Sarlavha qidiruvbop: "Top 10 Largest ... in the World".
