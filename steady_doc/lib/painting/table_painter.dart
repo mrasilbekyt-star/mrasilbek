@@ -388,7 +388,7 @@ class TablePainter extends CustomPainter {
         _paintTrunkBones(canvas);
       case Region.hand:
         _paintLongBones(canvas, count: 4, width: 26, spread: 85);
-      case Region.thigh || Region.knee || Region.shoulder:
+      case Region.knee || Region.shoulder:
         _paintLongBones(canvas, count: 1, width: 120, spread: 0);
     }
   }

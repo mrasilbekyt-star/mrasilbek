@@ -19,7 +19,7 @@ abstract final class BodyLayout {
   static const double needleBelowPlunger = 130;
 }
 
-enum Region { belly, hand, appendix, thigh, gallbladder, knee, flank, shoulder }
+enum Region { belly, hand, appendix, gallbladder, knee, flank, shoulder }
 
 /// One patient's operating field: which pictures to show and where things are.
 ///
@@ -27,14 +27,15 @@ enum Region { belly, hand, appendix, thigh, gallbladder, knee, flank, shoulder }
 /// `<id>_done`. They are 3:4 portrait and cover the whole 1000 x 1400 canvas
 /// (25 units cropped at each side); the coordinates below are measured on them.
 class SceneDef {
-  SceneDef({
+  const SceneDef({
     required this.id,
     required this.region,
     required this.skin,
     required this.incisionStart,
     required this.incisionEnd,
     required this.workZone,
-    required this.syringe,
+    this.syringe = const Offset(330, 440),
+    this.itemSide = 0,
   });
 
   final String id;
@@ -53,82 +54,86 @@ class SceneDef {
   /// Top of the syringe plunger before the injection.
   final Offset syringe;
 
+  /// Side of the incision the findings sit on: 0 alternates between both
+  /// sides, -1 or 1 keeps them on the one side where the organ is.
+  final double itemSide;
+
   /// Corridors may bend slightly outside [workZone].
   Rect get corridorZone => workZone.inflate(30);
 }
 
-SceneDef _scene(String id, Region region) => switch (region) {
-      Region.belly => SceneDef(
+/// Geometry of every patient picture, measured on its `_open` layer.
+SceneDef _scene(String id) => switch (id) {
+      'hand_a' => SceneDef(
           id: id,
-          region: region,
+          region: Region.hand,
+          skin: RRect.fromLTRBR(200, 430, 780, 1000, const Radius.circular(120)),
+          incisionStart: const Offset(490, 590),
+          incisionEnd: const Offset(490, 880),
+          workZone: const Rect.fromLTRB(380, 560, 600, 900),
+          syringe: const Offset(300, 360),
+        ),
+      'appendix_a' => SceneDef(
+          id: id,
+          region: Region.appendix,
+          skin: RRect.fromLTRBR(60, 300, 940, 1250, const Radius.circular(160)),
+          incisionStart: const Offset(230, 560),
+          incisionEnd: const Offset(660, 1130),
+          workZone: const Rect.fromLTRB(170, 640, 720, 1120),
+          syringe: const Offset(800, 400),
+        ),
+      'torso_a' => SceneDef(
+          id: id,
+          region: Region.belly,
+          skin: RRect.fromLTRBR(60, 80, 940, 1300, const Radius.circular(200)),
+          incisionStart: const Offset(480, 150),
+          incisionEnd: const Offset(480, 1150),
+          workZone: const Rect.fromLTRB(180, 250, 760, 1100),
+        ),
+      'gall_a' => SceneDef(
+          id: id,
+          region: Region.gallbladder,
+          skin: RRect.fromLTRBR(40, 100, 960, 1250, const Radius.circular(160)),
+          incisionStart: const Offset(150, 820),
+          incisionEnd: const Offset(760, 450),
+          workZone: const Rect.fromLTRB(140, 440, 620, 800),
+          syringe: const Offset(820, 520),
+          itemSide: -1,
+        ),
+      'knee_a' => SceneDef(
+          id: id,
+          region: Region.knee,
+          skin: RRect.fromLTRBR(80, 60, 920, 1250, const Radius.circular(160)),
+          incisionStart: const Offset(500, 270),
+          incisionEnd: const Offset(510, 1000),
+          workZone: const Rect.fromLTRB(220, 300, 780, 1080),
+        ),
+      'flank_a' => SceneDef(
+          id: id,
+          region: Region.flank,
+          skin: RRect.fromLTRBR(40, 100, 960, 1250, const Radius.circular(160)),
+          incisionStart: const Offset(440, 320),
+          incisionEnd: const Offset(470, 1010),
+          workZone: const Rect.fromLTRB(170, 360, 720, 980),
+          syringe: const Offset(780, 420),
+        ),
+      'shoulder_a' => SceneDef(
+          id: id,
+          region: Region.shoulder,
+          skin: RRect.fromLTRBR(60, 80, 940, 1250, const Radius.circular(160)),
+          incisionStart: const Offset(470, 200),
+          incisionEnd: const Offset(470, 1040),
+          workZone: const Rect.fromLTRB(220, 250, 720, 700),
+          syringe: const Offset(820, 400),
+        ),
+      // belly_a..belly_e: midline laparotomy, all shot the same way.
+      _ => SceneDef(
+          id: id,
+          region: Region.belly,
           skin: RRect.fromLTRBR(160, 180, 840, 1240, const Radius.circular(140)),
           incisionStart: const Offset(500, 340),
           incisionEnd: const Offset(500, 1170),
           workZone: const Rect.fromLTRB(250, 300, 750, 1130),
-          syringe: const Offset(330, 440),
-        ),
-      Region.hand => SceneDef(
-          id: id,
-          region: region,
-          skin: RRect.fromLTRBR(200, 240, 800, 1250, const Radius.circular(160)),
-          incisionStart: const Offset(500, 560),
-          incisionEnd: const Offset(500, 980),
-          workZone: const Rect.fromLTRB(310, 460, 690, 1100),
-          syringe: const Offset(300, 360),
-        ),
-      Region.appendix => SceneDef(
-          id: id,
-          region: region,
-          skin: RRect.fromLTRBR(150, 200, 850, 1240, const Radius.circular(140)),
-          incisionStart: const Offset(360, 500),
-          incisionEnd: const Offset(640, 1000),
-          workZone: const Rect.fromLTRB(240, 330, 760, 1120),
-          syringe: const Offset(280, 360),
-        ),
-      Region.thigh => SceneDef(
-          id: id,
-          region: region,
-          skin: RRect.fromLTRBR(210, 120, 790, 1300, const Radius.circular(200)),
-          incisionStart: const Offset(500, 300),
-          incisionEnd: const Offset(500, 1150),
-          workZone: const Rect.fromLTRB(290, 280, 710, 1160),
-          syringe: const Offset(300, 360),
-        ),
-      Region.gallbladder => SceneDef(
-          id: id,
-          region: region,
-          skin: RRect.fromLTRBR(150, 200, 850, 1240, const Radius.circular(140)),
-          incisionStart: const Offset(300, 560),
-          incisionEnd: const Offset(720, 840),
-          workZone: const Rect.fromLTRB(240, 330, 760, 1120),
-          syringe: const Offset(280, 360),
-        ),
-      Region.knee => SceneDef(
-          id: id,
-          region: region,
-          skin: RRect.fromLTRBR(220, 150, 780, 1280, const Radius.circular(220)),
-          incisionStart: const Offset(500, 380),
-          incisionEnd: const Offset(500, 1080),
-          workZone: const Rect.fromLTRB(300, 330, 700, 1120),
-          syringe: const Offset(300, 360),
-        ),
-      Region.flank => SceneDef(
-          id: id,
-          region: region,
-          skin: RRect.fromLTRBR(120, 240, 880, 1210, const Radius.circular(160)),
-          incisionStart: const Offset(260, 600),
-          incisionEnd: const Offset(740, 880),
-          workZone: const Rect.fromLTRB(220, 350, 780, 1120),
-          syringe: const Offset(260, 300),
-        ),
-      Region.shoulder => SceneDef(
-          id: id,
-          region: region,
-          skin: RRect.fromLTRBR(200, 150, 800, 1260, const Radius.circular(200)),
-          incisionStart: const Offset(470, 360),
-          incisionEnd: const Offset(540, 1060),
-          workZone: const Rect.fromLTRB(290, 320, 710, 1110),
-          syringe: const Offset(300, 360),
         ),
     };
 
@@ -239,19 +244,19 @@ class LevelDef {
 final List<LevelDef> levels = _buildLevels();
 
 List<LevelDef> _buildLevels() {
-  const cases = <(Sex, int, String, Region, Diagnosis, List<String>, Color)>[
-    (Sex.male, 24, 'belly_a', Region.belly, Diagnosis.foreignBody, ['coin'], Color(0xFFE3B694)),
-    (Sex.male, 45, 'hand_a', Region.hand, Diagnosis.fishhook, ['fishhook'], Color(0xFFC68E6A)),
-    (Sex.female, 19, 'appendix_a', Region.appendix, Diagnosis.appendicitis, ['appendix'], Color(0xFFD1A47A)),
-    (Sex.male, 28, 'thigh_a', Region.thigh, Diagnosis.glass, ['glass', 'glass'], Color(0xFF6B4430)),
-    (Sex.female, 31, 'belly_b', Region.belly, Diagnosis.foreignBody, ['ring', 'pin'], Color(0xFFA8754F)),
-    (Sex.male, 54, 'gall_a', Region.gallbladder, Diagnosis.gallstones, ['gallstone', 'gallstone'], Color(0xFFEFCFB8)),
-    (Sex.female, 36, 'knee_a', Region.knee, Diagnosis.looseBodies, ['bone', 'bone'], Color(0xFFF1D2BE)),
-    (Sex.male, 63, 'flank_a', Region.flank, Diagnosis.kidneyStones, ['kidneystone', 'kidneystone'], Color(0xFFB98260)),
-    (Sex.male, 19, 'belly_c', Region.belly, Diagnosis.foreignBody, ['battery', 'magnet', 'dice'], Color(0xFFC4936B)),
-    (Sex.male, 41, 'shoulder_a', Region.shoulder, Diagnosis.metal, ['metal', 'metal', 'metal'], Color(0xFFB07A55)),
-    (Sex.female, 70, 'belly_d', Region.belly, Diagnosis.foreignBody, ['denture', 'spoon'], Color(0xFFEBD3C4)),
-    (Sex.male, 49, 'belly_e', Region.belly, Diagnosis.foreignBody, ['key', 'bolt', 'toothbrush'], Color(0xFF5E3A28)),
+  const cases = <(Sex, int, String, Diagnosis, List<String>, Color)>[
+    (Sex.male, 24, 'belly_a', Diagnosis.foreignBody, ['coin'], Color(0xFFE3B694)),
+    (Sex.male, 45, 'hand_a', Diagnosis.fishhook, ['fishhook'], Color(0xFFC68E6A)),
+    (Sex.female, 19, 'appendix_a', Diagnosis.appendicitis, ['appendix'], Color(0xFFD1A47A)),
+    (Sex.male, 28, 'torso_a', Diagnosis.glass, ['glass', 'glass'], Color(0xFF6B4430)),
+    (Sex.female, 31, 'belly_b', Diagnosis.foreignBody, ['ring', 'pin'], Color(0xFFA8754F)),
+    (Sex.male, 54, 'gall_a', Diagnosis.gallstones, ['gallstone', 'gallstone'], Color(0xFFEFCFB8)),
+    (Sex.female, 36, 'knee_a', Diagnosis.looseBodies, ['bone', 'bone'], Color(0xFFF1D2BE)),
+    (Sex.male, 63, 'flank_a', Diagnosis.kidneyStones, ['kidneystone', 'kidneystone'], Color(0xFFB98260)),
+    (Sex.male, 19, 'belly_c', Diagnosis.foreignBody, ['battery', 'magnet', 'dice'], Color(0xFFC4936B)),
+    (Sex.male, 41, 'shoulder_a', Diagnosis.metal, ['metal', 'metal', 'metal'], Color(0xFFB07A55)),
+    (Sex.female, 70, 'belly_d', Diagnosis.foreignBody, ['denture', 'spoon'], Color(0xFFEBD3C4)),
+    (Sex.male, 49, 'belly_e', Diagnosis.foreignBody, ['key', 'bolt', 'toothbrush'], Color(0xFF5E3A28)),
   ];
   return [
     for (var i = 0; i < cases.length; i++)
@@ -259,12 +264,12 @@ List<LevelDef> _buildLevels() {
         number: i + 1,
         sex: cases[i].$1,
         age: cases[i].$2,
-        scene: _scene(cases[i].$3, cases[i].$4),
-        diagnosis: cases[i].$5,
-        items: cases[i].$6,
+        scene: _scene(cases[i].$3),
+        diagnosis: cases[i].$4,
+        items: cases[i].$5,
         injection: i > 0,
         difficulty: i / (cases.length - 1),
-        skin: cases[i].$7,
+        skin: cases[i].$6,
       ),
   ];
 }
@@ -315,8 +320,8 @@ class LevelLayout {
     final cut = Polyline(resample(cutPts, 6));
     final exit = cut.at(cut.length / 2);
 
-    // Objects: alternate sides of the incision, away from it, from the exit
-    // and from each other.
+    // Objects: on the scene's side of the incision (or alternating sides), away
+    // from it, from the exit and from each other.
     double side(Offset p) {
       final d = p - a;
       return d.dx * across.dx + d.dy * across.dy;
@@ -325,7 +330,7 @@ class LevelLayout {
     final zone = scene.workZone;
     final items = <Offset>[];
     for (var i = 0; i < level.items.length; i++) {
-      final wantSide = i.isEven ? -1.0 : 1.0;
+      final wantSide = scene.itemSide != 0 ? scene.itemSide : (i.isEven ? -1.0 : 1.0);
       Offset? chosen;
       Offset candidate = zone.center;
       for (var attempt = 0; attempt < 600 && chosen == null; attempt++) {

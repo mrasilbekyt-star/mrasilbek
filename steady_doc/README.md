@@ -92,7 +92,7 @@ Har bir bemor alohida odam, o'z kasalligi va o'z sahnasi bilan (`lib/game/levels
 | 1 | Erkak, 24 | Yutib yuborilgan tanga | `belly_a` (qorin) | ✅ |
 | 2 | Erkak, 45 | Kaftga kirgan qarmoq | `hand_a` (kaft) | ⏳ |
 | 3 | Ayol, 19 | O'tkir appenditsit | `appendix_a` (qorinning o'ng pasti) | ⏳ |
-| 4 | Erkak, 28 | Sondagi shisha parchalari | `thigh_a` (son) | ⏳ |
+| 4 | Erkak, 28 | Qorin devoridagi shisha parchalari | `torso_a` (tana) | ⏳ |
 | 5 | Ayol, 31 | Uzuk va to'g'nag'ich | `belly_b` (qorin) | ⏳ |
 | 6 | Erkak, 54 | O't tosh kasalligi | `gall_a` (qovurg'a osti) | ⏳ |
 | 7 | Ayol, 36 | Tizzadagi suyak parchalari | `knee_a` (tizza) | ⏳ |

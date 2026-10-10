@@ -57,8 +57,8 @@ class Strings {
             'Рыболовный крючок в ладони'),
         Diagnosis.appendicitis =>
           _t("O'tkir appenditsit", 'Acute appendicitis', 'Острый аппендицит'),
-        Diagnosis.glass => _t('Sondagi shisha parchalari', 'Glass shards in the thigh',
-            'Осколки стекла в бедре'),
+        Diagnosis.glass => _t('Qorin devoridagi shisha parchalari',
+            'Glass shards in the abdominal wall', 'Осколки стекла в брюшной стенке'),
         Diagnosis.gallstones =>
           _t("O't tosh kasalligi", 'Gallstones', 'Желчнокаменная болезнь'),
         Diagnosis.looseBodies => _t('Tizzadagi suyak parchalari',

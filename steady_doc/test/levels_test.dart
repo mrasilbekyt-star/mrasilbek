@@ -70,14 +70,15 @@ void main() {
         expect(layout.stitchTargets.length, inInclusiveRange(5, 14));
       });
 
-      test('objects sit on both sides of the incision', () {
+      test("objects sit on their scene's side of the incision", () {
         final a = level.scene.incisionStart;
         final b = level.scene.incisionEnd;
         final axis = (b - a) / (b - a).distance;
         for (var i = 0; i < layout.items.length; i++) {
           final d = layout.items[i] - a;
           final side = -axis.dy * d.dx + axis.dx * d.dy;
-          expect(side * (i.isEven ? -1 : 1), greaterThanOrEqualTo(75), reason: 'item $i');
+          final want = level.scene.itemSide != 0 ? level.scene.itemSide : (i.isEven ? -1 : 1);
+          expect(side * want, greaterThanOrEqualTo(75), reason: 'item $i');
         }
       });
     });

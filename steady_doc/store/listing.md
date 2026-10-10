@@ -27,7 +27,7 @@ Natijada o'yinga taxminan 16+ yosh chegarasi qo'yiladi.
 Realistic surgery simulator: X-ray, incision, extraction, sutures. S Pen ready.
 
 **Full description:**
-Twelve real patients, twelve different cases: a swallowed coin, a fish hook in the palm, acute appendicitis, glass shards in the thigh, gallstones, loose fragments in the knee, kidney stones, metal fragments in the shoulder... You are the surgeon. Every patient needs a steady hand.
+Twelve real patients, twelve different cases: a swallowed coin, a fish hook in the palm, acute appendicitis, glass shards in the abdominal wall, gallstones, loose fragments in the knee, kidney stones, metal fragments in the shoulder... You are the surgeon. Every patient needs a steady hand.
 
 • X-RAY — hover your S Pen over the abdomen to locate the foreign body. No touching needed.
 • INCISION — follow the surgical marking with your scalpel. Press too hard and you cut too deep.
@@ -60,7 +60,7 @@ Contains realistic depictions of surgery.
 Haqiqiy jarrohlik simulyatori: rentgen, kesish, chiqarish, choklar. S Pen uchun.
 
 **To'liq tavsif:**
-O'n ikki bemor, o'n ikki xil holat: yutib yuborilgan tanga, kaftga kirgan qarmoq, o'tkir appenditsit, sondagi shisha parchalari, o't toshlari, tizzadagi suyak parchalari, buyrak toshlari, yelkadagi metall parchalari... Jarroh siz. Har bir bemorga titramaydigan qo'l kerak.
+O'n ikki bemor, o'n ikki xil holat: yutib yuborilgan tanga, kaftga kirgan qarmoq, o'tkir appenditsit, qorin devoridagi shisha parchalari, o't toshlari, tizzadagi suyak parchalari, buyrak toshlari, yelkadagi metall parchalari... Jarroh siz. Har bir bemorga titramaydigan qo'l kerak.
 
 • RENTGEN — S Pen'ni qorin ustida tegizmasdan yurgizib, yot jismni toping.
 • KESISH — skalpel bilan jarrohlik belgisi bo'ylab kesing. Qattiq bossangiz, juda chuqur kesib yuborasiz.
@@ -93,7 +93,7 @@ Jarrohlikning real tasvirlari mavjud.
 Реалистичный симулятор хирурга: рентген, разрез, извлечение, швы. Для S Pen.
 
 **Полное описание:**
-Двенадцать пациентов, двенадцать разных случаев: проглоченная монета, рыболовный крючок в ладони, острый аппендицит, осколки стекла в бедре, желчные камни, костные фрагменты в колене, камни в почках, металлические осколки в плече... Хирург — вы. Каждому пациенту нужна твёрдая рука.
+Двенадцать пациентов, двенадцать разных случаев: проглоченная монета, рыболовный крючок в ладони, острый аппендицит, осколки стекла в брюшной стенке, желчные камни, костные фрагменты в колене, камни в почках, металлические осколки в плече... Хирург — вы. Каждому пациенту нужна твёрдая рука.
 
 • РЕНТГЕН — водите S Pen над животом и найдите инородное тело, не касаясь экрана.
 • РАЗРЕЗ — ведите скальпель по хирургической разметке. Надавите сильнее — и разрез будет слишком глубоким.

@@ -151,7 +151,7 @@ class _LevelCard extends StatelessWidget {
 IconData _regionIcon(Region region) => switch (region) {
       Region.belly || Region.appendix || Region.gallbladder => Icons.accessibility_new_rounded,
       Region.hand => Icons.back_hand_rounded,
-      Region.thigh || Region.knee => Icons.directions_walk_rounded,
+      Region.knee => Icons.directions_walk_rounded,
       Region.flank => Icons.airline_seat_flat_rounded,
       Region.shoulder => Icons.fitness_center_rounded,
     };
