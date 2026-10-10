@@ -1,11 +1,11 @@
-"""Generates a picture with the Gemini API.
+"""Generates one picture with an image model, through OpenRouter or Gemini.
 
-    GEMINI_API_KEY=... python3 tool/gen_art.py <out.jpg> "<prompt>" [--ref a.jpg ...]
-                                              [--aspect 3:4] [--model gemini-3-pro-image]
+    OPENROUTER_API_KEY=... python3 tool/gen_art.py <out> "<prompt>" [--ref a.jpg ...]
+    GEMINI_API_KEY=...     python3 tool/gen_art.py <out> "<prompt>" [--ref a.jpg ...]
 
 Reference pictures (--ref) are sent along with the prompt, so "edit this exact
-image" style prompts keep the same framing. The key is read from the
-GEMINI_API_KEY environment variable only.
+image" prompts keep the same framing. Keys are read from the environment only.
+The provider is OpenRouter when OPENROUTER_API_KEY is set, Gemini otherwise.
 """
 import argparse
 import base64
@@ -23,57 +23,87 @@ parser.add_argument('out')
 parser.add_argument('prompt')
 parser.add_argument('--ref', action='append', default=[])
 parser.add_argument('--aspect', default='3:4')
-parser.add_argument('--size', default='2K', help='1K, 2K or 4K')
-parser.add_argument('--model', default='gemini-3-pro-image')
+parser.add_argument('--size', default='2K', help='1K, 2K or 4K (Gemini only)')
+parser.add_argument('--model', help='defaults: google/gemini-2.5-flash-image (OpenRouter), '
+                                    'gemini-3-pro-image (Gemini)')
 args = parser.parse_args()
+
+cafile = os.environ.get('SSL_CERT_FILE') or (
+    '/root/.ccr/ca-bundle.crt' if os.path.exists('/root/.ccr/ca-bundle.crt') else None)
+ctx = ssl.create_default_context(cafile=cafile)
+
+
+def refs():
+    for ref in args.ref:
+        mime = mimetypes.guess_type(ref)[0] or 'image/jpeg'
+        with open(ref, 'rb') as f:
+            yield mime, base64.b64encode(f.read()).decode()
+
+
+def post(url, body, headers):
+    req = urllib.request.Request(url, data=json.dumps(body).encode(), method='POST',
+                                 headers={'Content-Type': 'application/json', **headers})
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(req, context=ctx, timeout=300) as resp:
+                return json.load(resp)
+        except urllib.error.HTTPError as e:
+            detail = e.read().decode(errors='replace')[:800]
+            if e.code in (429, 500, 502, 503) and attempt < 2 and 'limit: 0' not in detail:
+                print(f'HTTP {e.code}, retrying...', file=sys.stderr)
+                time.sleep(10 * (attempt + 1))
+                continue
+            sys.exit(f'HTTP {e.code}: {detail}')
+
+
+def save(data_b64):
+    os.makedirs(os.path.dirname(os.path.abspath(args.out)) or '.', exist_ok=True)
+    with open(args.out, 'wb') as f:
+        f.write(base64.b64decode(data_b64))
+    print(f'saved {args.out}')
+
+
+if os.environ.get('OPENROUTER_API_KEY'):
+    content = [{'type': 'text', 'text': args.prompt}]
+    content += [{'type': 'image_url', 'image_url': {'url': f'data:{m};base64,{d}'}} for m, d in refs()]
+    data = post('https://openrouter.ai/api/v1/chat/completions', {
+        'model': args.model or 'google/gemini-2.5-flash-image',
+        'messages': [{'role': 'user', 'content': content}],
+        'modalities': ['image', 'text'],
+        'image_config': {'aspect_ratio': args.aspect},
+        'usage': {'include': True},
+    }, {
+        'Authorization': f'Bearer {os.environ["OPENROUTER_API_KEY"]}',
+        'X-Title': 'Steady Doc art',
+    })
+    cost = (data.get('usage') or {}).get('cost')
+    for choice in data.get('choices', []):
+        for image in (choice.get('message') or {}).get('images') or []:
+            url = (image.get('image_url') or {}).get('url', '')
+            if url.startswith('data:'):
+                save(url.split(',', 1)[1])
+                if cost is not None:
+                    print(f'cost ${cost:.4f}')
+                sys.exit(0)
+    sys.exit(f'No image returned: {json.dumps(data)[:600]}')
 
 key = os.environ.get('GEMINI_API_KEY')
 if not key:
-    sys.exit('Set GEMINI_API_KEY first.')
-
-parts = [{'text': args.prompt}]
-for ref in args.ref:
-    mime = mimetypes.guess_type(ref)[0] or 'image/jpeg'
-    with open(ref, 'rb') as f:
-        parts.append({'inline_data': {'mime_type': mime, 'data': base64.b64encode(f.read()).decode()}})
-
-body = {
+    sys.exit('Set OPENROUTER_API_KEY or GEMINI_API_KEY first.')
+parts = [{'text': args.prompt}] + [{'inline_data': {'mime_type': m, 'data': d}} for m, d in refs()]
+model = args.model or 'gemini-3-pro-image'
+data = post(f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent', {
     'contents': [{'parts': parts}],
     'generationConfig': {
         'responseModalities': ['IMAGE'],
         'imageConfig': {'aspectRatio': args.aspect, 'imageSize': args.size},
     },
-}
-url = f'https://generativelanguage.googleapis.com/v1beta/models/{args.model}:generateContent'
-req = urllib.request.Request(url, data=json.dumps(body).encode(), method='POST', headers={
-    'Content-Type': 'application/json',
-    'x-goog-api-key': key,
-})
-cafile = os.environ.get('SSL_CERT_FILE') or ('/root/.ccr/ca-bundle.crt' if os.path.exists('/root/.ccr/ca-bundle.crt') else None)
-ctx = ssl.create_default_context(cafile=cafile)
-
-for attempt in range(3):
-    try:
-        with urllib.request.urlopen(req, context=ctx, timeout=300) as resp:
-            data = json.load(resp)
-        break
-    except urllib.error.HTTPError as e:
-        detail = e.read().decode(errors='replace')[:600]
-        if e.code in (429, 500, 503) and attempt < 2:
-            print(f'HTTP {e.code}, retrying...', file=sys.stderr)
-            time.sleep(10 * (attempt + 1))
-            continue
-        sys.exit(f'HTTP {e.code}: {detail}')
-
+}, {'x-goog-api-key': key})
 for cand in data.get('candidates', []):
     for part in cand.get('content', {}).get('parts', []):
         inline = part.get('inlineData') or part.get('inline_data')
         if inline:
-            os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
-            with open(args.out, 'wb') as f:
-                f.write(base64.b64decode(inline['data']))
-            print(f'saved {args.out} ({inline.get("mimeType") or inline.get("mime_type")})')
+            save(inline['data'])
             sys.exit(0)
 reason = [c.get('finishReason') for c in data.get('candidates', [])]
-feedback = data.get('promptFeedback')
-sys.exit(f'No image returned. finishReason={reason} promptFeedback={feedback}')
+sys.exit(f'No image returned. finishReason={reason} promptFeedback={data.get("promptFeedback")}')
