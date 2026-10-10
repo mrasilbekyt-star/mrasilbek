@@ -27,7 +27,7 @@ Flutter o'rnatilgan bo'lishi kerak (Spoortza uchun o'rnatgansiz). Flutter 3.41 y
 cd steady_doc
 flutter pub get
 flutter run          # telefon USB orqali ulangan bo'lsin (USB debugging yoqilgan)
-flutter test         # 91 ta test
+flutter test         # 110 ta test
 ```
 
 ## Play Market'ga joylash
@@ -90,17 +90,21 @@ Har bir bemor alohida odam, o'z kasalligi va o'z sahnasi bilan (`lib/game/levels
 | # | Bemor | Tashxis | Sahna (`assets/art/<sahna>_*`) | Rasmlar |
 |---|---|---|---|---|
 | 1 | Erkak, 24 | Yutib yuborilgan tanga | `belly_a` (qorin) | ✅ |
-| 2 | Erkak, 45 | Kaftga kirgan qarmoq | `hand_a` (kaft) | ⏳ |
-| 3 | Ayol, 19 | O'tkir appenditsit | `appendix_a` (qorinning o'ng pasti) | ⏳ |
-| 4 | Erkak, 28 | Qorin devoridagi shisha parchalari | `torso_a` (tana) | ⏳ |
-| 5 | Ayol, 31 | Uzuk va to'g'nag'ich | `belly_b` (qorin) | ⏳ |
-| 6 | Erkak, 54 | O't tosh kasalligi | `gall_a` (qovurg'a osti) | ⏳ |
-| 7 | Ayol, 36 | Tizzadagi suyak parchalari | `knee_a` (tizza) | ⏳ |
-| 8 | Erkak, 63 | Buyrak toshlari | `flank_a` (biqin) | ⏳ |
-| 9 | Erkak, 19 | Batareya, magnit, soqqa | `belly_c` (qorin) | ⏳ |
-| 10 | Erkak, 41 | Yelkadagi metall parchalari | `shoulder_a` (yelka) | ⏳ |
-| 11 | Ayol, 70 | Tish protezi va qoshiq | `belly_d` (qorin) | ⏳ |
-| 12 | Erkak, 49 | Kalit, bolt, tish cho'tkasi | `belly_e` (qorin) | ⏳ |
+| 2 | Erkak, 45 | Kaftga kirgan qarmoq | `hand_a` (kaft) | ✅ (rentgen 🔁) |
+| 3 | Ayol, 19 | O'tkir appenditsit | `appendix_a` (qorinning o'ng pasti) | ✅ |
+| 4 | Erkak, 28 | Qorin devoridagi shisha parchalari | `torso_a` (tana) | ✅ |
+| 5 | Ayol, 31 | Uzuk va to'g'nag'ich | `belly_b` (qorin) | 🔁 |
+| 6 | Erkak, 54 | O't tosh kasalligi | `gall_a` (qovurg'a osti) | ✅ |
+| 7 | Ayol, 36 | Tizzadagi suyak parchalari | `knee_a` (tizza) | ✅ (yopiq 🔁) |
+| 8 | Erkak, 63 | Buyrak toshlari | `flank_a` (biqin) | ✅ |
+| 9 | Erkak, 19 | Batareya, magnit, soqqa | `belly_c` (qorin) | 🔁 |
+| 10 | Erkak, 41 | Yelkadagi metall parchalari | `shoulder_a` (yelka) | ✅ (yopiq, rentgen 🔁) |
+| 11 | Ayol, 70 | Tish protezi va qoshiq | `belly_d` (qorin) | 🔁 |
+| 12 | Erkak, 49 | Kalit, bolt, tish cho'tkasi | `belly_e` (qorin) | 🔁 |
+
+🔁 — rasm bor, lekin qayta yasash kerak: `belly_b`–`belly_e` ochiq rasmlari `belly_a`'ning nusxasi bo'lib
+chiqqan, `hand_a` va `shoulder_a` rentgeni haqiqiy rentgen emas, `knee_a` va `shoulder_a` yopiq rasmi
+plastmassaga o'xshaydi.
 
 ## Real grafika (`assets/art/`)
 
@@ -114,7 +118,7 @@ o'rniga kod bilan chizilgan grafika chiqadi.
 | `<sahna>_xray` | Xuddi shu kadrning rentgen surati |
 | `<sahna>_done` | (ixtiyoriy) Operatsiyadan keyin, yara tikilgan |
 | `tool_forceps` | Pinset, foni shaffof, uchi pastda ✅ |
-| `obj_<nom>` | Chiqariladigan narsa, foni shaffof ✅ 13 tasi bor; `fishhook`, `appendix`, `glass`, `bone`, `kidneystone`, `metal` hali emoji |
+| `obj_<nom>` | Chiqariladigan narsa, foni shaffof ✅ hammasi bor |
 
 Sahna rasmlari tik (3:4) va bir xil kadrda bo'lishi kerak; ular 1000 × 1400 maydonni to'liq qoplaydi.
 Har bir sahnaning kesik chizig'i, narsalar zonasi va shprits joyi `levels.dart` → `_scene()` da.
@@ -123,8 +127,10 @@ Yangi rasm qo'yilgach, shu koordinatalarni rasmdagi anatomiyaga moslash kerak.
 **Yordamchi skriptlar:**
 - `python3 -I tool/cutout.py <rasm> assets/art coin ring ... --holes ring` — oq fondagi narsalarni
   qirqib, shaffof PNG qiladi.
-- `GEMINI_API_KEY=... python3 tool/gen_art.py <chiqish.jpg> "<prompt>" --ref <misol.jpg>` — Gemini API
-  bilan rasm yaratadi (billing yoqilgan kalit kerak, bepul tarifda rasm limiti 0).
+- `python3 tool/gen_scenes.py` — yetishmayotgan hamma sahna rasmlarini yaratadi (`OPENROUTER_API_KEY`
+  yoki `GEMINI_API_KEY` muhit o'zgaruvchisi kerak). `--redo belly_b,hand_a_xray` — tayyor rasmlarni
+  qayta yasaydi, `--dry-run` — pul sarflamasdan nima yasalishini ko'rsatadi.
+- `python3 tool/gen_art.py <chiqish.jpg> "<prompt>" --ref <misol.jpg>` — bitta rasm yaratadi.
 
 ## Loyiha tuzilishi
 
