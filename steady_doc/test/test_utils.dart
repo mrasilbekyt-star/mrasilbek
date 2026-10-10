@@ -1,7 +1,6 @@
 import 'dart:ui';
 
 import 'package:steady_doc/game/geometry.dart';
-import 'package:steady_doc/game/levels.dart';
 import 'package:steady_doc/game/session.dart';
 import 'package:steady_doc/game/stages.dart';
 
@@ -51,7 +50,7 @@ class CarefulPlayer {
       case InjectStage():
         final start = stage.handle;
         session.down(_at(start));
-        _moveTo(start, Offset(start.dx, BodyLayout.plungerEnd + 5), step: 2,
+        _moveTo(start, Offset(start.dx, stage.end + 5), step: 2,
             speed: stage.speedLimit * 0.6);
         session.up();
       case XrayStage():

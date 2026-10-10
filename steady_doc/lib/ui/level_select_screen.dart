@@ -114,9 +114,7 @@ class _LevelCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Icon(
-                  unlocked
-                      ? (level.sex == Sex.male ? Icons.man_rounded : Icons.woman_rounded)
-                      : Icons.lock_rounded,
+                  unlocked ? _regionIcon(level.scene.region) : Icons.lock_rounded,
                   color: Colors.white70,
                   size: 38,
                 ),
@@ -133,7 +131,7 @@ class _LevelCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  strings.findings(level.items),
+                  strings.diagnosis(level.diagnosis),
                   maxLines: 2,
                   textAlign: TextAlign.center,
                   overflow: TextOverflow.ellipsis,
@@ -149,3 +147,11 @@ class _LevelCard extends StatelessWidget {
     );
   }
 }
+
+IconData _regionIcon(Region region) => switch (region) {
+      Region.belly || Region.appendix || Region.gallbladder => Icons.accessibility_new_rounded,
+      Region.hand => Icons.back_hand_rounded,
+      Region.thigh || Region.knee => Icons.directions_walk_rounded,
+      Region.flank => Icons.airline_seat_flat_rounded,
+      Region.shoulder => Icons.fitness_center_rounded,
+    };

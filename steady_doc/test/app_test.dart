@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:steady_doc/game/levels.dart';
 import 'package:steady_doc/game/session.dart';
 import 'package:steady_doc/main.dart';
 import 'package:steady_doc/painting/art.dart';
@@ -30,9 +31,9 @@ void main() {
     await tester.pump(const Duration(milliseconds: 600));
     expect(find.text('PATIENT 1'), findsOneWidget);
     expect(find.text('Male, 24'), findsOneWidget);
-    expect(find.text('coin'), findsOneWidget);
+    expect(find.text('Swallowed foreign body'), findsWidgets);
     // Patient 2 stays locked until patient 1 is cured.
-    expect(find.text('Female, 31'), findsOneWidget);
+    expect(find.text('Male, 45'), findsOneWidget);
     expect(find.byIcon(Icons.lock_rounded), findsWidgets);
     expect(state.isUnlocked(2), isFalse);
 
@@ -41,7 +42,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 600));
     expect(find.text('X-RAY'), findsOneWidget);
     expect(find.text('Patient 1 · Male, 24'), findsOneWidget);
-    expect(find.text('To remove: coin'), findsOneWidget);
+    expect(find.text('Diagnosis: Swallowed foreign body · coin'), findsOneWidget);
     expect(find.text('HR'), findsOneWidget);
     expect(find.text('SpO2'), findsOneWidget);
 
@@ -82,13 +83,21 @@ void main() {
 
   testWidgets('the operating room pictures ship with the app', (tester) async {
     final art = (await tester.runAsync(() => ArtAssets.load(rootBundle)))!;
-    expect(art.sceneClosed, isNotNull);
-    expect(art.sceneOpen, isNotNull);
-    expect(art.sceneXray, isNotNull);
-    expect(art.sceneDone, isNotNull);
-    // Scene pictures are 3:4 portrait, as the layout expects.
-    for (final image in [art.sceneClosed!, art.sceneOpen!, art.sceneXray!, art.sceneDone!]) {
-      expect(image.width / image.height, closeTo(0.75, 0.01));
+    for (final layer in ['closed', 'open', 'xray', 'done']) {
+      expect(art.scene('belly_a', layer), isNotNull, reason: layer);
+    }
+    // Every scene picture that exists is 3:4 portrait, as the layout expects.
+    for (final level in levels) {
+      for (final layer in ['closed', 'open', 'xray', 'done']) {
+        final image = art.scene(level.scene.id, layer);
+        if (image == null) continue;
+        expect(image.width / image.height, closeTo(0.75, 0.01), reason: '${level.scene.id}_$layer');
+      }
+    }
+    expect(art.forceps, isNotNull);
+    for (final id in ['coin', 'ring', 'key', 'denture', 'battery', 'magnet', 'gallstone', 'bolt',
+        'pin', 'dice', 'spoon', 'toothbrush']) {
+      expect(art.finding(id), isNotNull, reason: id);
     }
   });
 }

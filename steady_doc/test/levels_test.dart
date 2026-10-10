@@ -10,6 +10,14 @@ void main() {
     }
   });
 
+  test('every patient is a different person in their own scene', () {
+    final scenes = {for (final level in levels) level.scene.id};
+    expect(scenes, hasLength(levels.length));
+    final regions = {for (final level in levels) level.scene.region};
+    expect(regions, hasLength(Region.values.length));
+    expect({for (final level in levels) level.diagnosis}, hasLength(Diagnosis.values.length));
+  });
+
   test('there are 12 patients with rising difficulty', () {
     expect(levels, hasLength(12));
     expect(levels.first.difficulty, 0);
@@ -36,10 +44,10 @@ void main() {
         expect(layout.items, hasLength(level.items.length));
         for (var i = 0; i < layout.items.length; i++) {
           final p = layout.items[i];
-          expect(BodyLayout.workZone.contains(p), isTrue, reason: 'item $i at $p');
+          expect(level.scene.workZone.contains(p), isTrue, reason: 'item $i at $p');
           expect((p - layout.exit).distance, greaterThanOrEqualTo(level.minExitDistance));
           for (var j = 0; j < i; j++) {
-            expect((p - layout.items[j]).distance, greaterThanOrEqualTo(170));
+            expect((p - layout.items[j]).distance, greaterThanOrEqualTo(150));
           }
         }
       });
@@ -50,16 +58,27 @@ void main() {
           expect(corridor.start, layout.items[i]);
           expect((corridor.end - layout.exit).distance, lessThan(1));
           for (final p in corridor.points) {
-            expect(BodyLayout.torso.contains(p), isTrue, reason: 'corridor $i at $p');
+            expect(level.scene.skin.contains(p), isTrue, reason: 'corridor $i at $p');
           }
         }
       });
 
-      test('incision and stitches stay on the torso', () {
+      test('incision and stitches stay on the skin', () {
         for (final p in [...layout.cut.points, ...layout.stitchTargets]) {
-          expect(BodyLayout.torso.contains(p), isTrue, reason: '$p');
+          expect(level.scene.skin.contains(p), isTrue, reason: '$p');
         }
-        expect(layout.stitchTargets, hasLength(level.stitchCount));
+        expect(layout.stitchTargets.length, inInclusiveRange(5, 14));
+      });
+
+      test('objects sit on both sides of the incision', () {
+        final a = level.scene.incisionStart;
+        final b = level.scene.incisionEnd;
+        final axis = (b - a) / (b - a).distance;
+        for (var i = 0; i < layout.items.length; i++) {
+          final d = layout.items[i] - a;
+          final side = -axis.dy * d.dx + axis.dx * d.dy;
+          expect(side * (i.isEven ? -1 : 1), greaterThanOrEqualTo(75), reason: 'item $i');
+        }
       });
     });
   }

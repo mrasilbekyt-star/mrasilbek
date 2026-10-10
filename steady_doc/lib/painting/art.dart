@@ -10,14 +10,15 @@ import 'package:flutter/services.dart';
 ///
 /// | File | What it shows |
 /// |---|---|
-/// | `scene_closed` | Patient from above, abdomen exposed, the rest under drapes |
-/// | `scene_open` | The same shot with the abdomen opened |
-/// | `scene_xray` | X-ray of the same abdomen, same framing |
-/// | `scene_done` | The same shot after the operation, wound closed |
+/// | `<scene>_closed` | Patient from above, operating field exposed, the rest under drapes |
+/// | `<scene>_open` | The same shot with the wound opened |
+/// | `<scene>_xray` | X-ray of the same body part, same framing |
+/// | `<scene>_done` | The same shot after the operation, wound closed |
 /// | `tool_forceps` | Forceps pointing up, tips at the bottom center (transparent) |
 /// | `obj_<id>` | A finding, e.g. `obj_coin.png` (ids in `findingEmoji`, transparent) |
 ///
-/// Scene pictures are 3:4 portrait and cover the whole 1000 x 1400 table.
+/// `<scene>` is a [SceneDef.id], e.g. `belly_a`. Scene pictures are 3:4
+/// portrait and cover the whole 1000 x 1400 table.
 class ArtAssets {
   ArtAssets(this._images);
 
@@ -27,10 +28,9 @@ class ArtAssets {
 
   ui.Image? operator [](String name) => _images[name];
 
-  ui.Image? get sceneClosed => _images['scene_closed'];
-  ui.Image? get sceneOpen => _images['scene_open'];
-  ui.Image? get sceneXray => _images['scene_xray'];
-  ui.Image? get sceneDone => _images['scene_done'];
+  /// One picture of a patient's scene: `closed`, `open`, `xray` or `done`.
+  ui.Image? scene(String sceneId, String layer) => _images['${sceneId}_$layer'];
+
   ui.Image? get forceps => _images['tool_forceps'];
   ui.Image? finding(String id) => _images['obj_$id'];
 

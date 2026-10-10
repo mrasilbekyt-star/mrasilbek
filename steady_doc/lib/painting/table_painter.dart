@@ -45,8 +45,12 @@ class TablePainter extends CustomPainter {
   static const _marker = Color(0xFF6B3FA0);
   static const _suture = Color(0xFF15181C);
 
-  /// Opened part of the abdomen during extraction.
-  static final Rect _cavity = BodyLayout.workZone.inflate(18);
+  SceneDef get _scene => session.level.scene;
+
+  /// Opened part of the wound during extraction.
+  Rect get _cavity => _scene.workZone.inflate(18);
+
+  ui.Image? _art(String layer) => art.scene(_scene.id, layer);
 
   double get _t => session.now;
 
@@ -57,9 +61,9 @@ class TablePainter extends CustomPainter {
     canvas.clipRect(Offset.zero & size);
     final stage = session.stage;
     // After a successful operation, show the closed wound from the photo.
-    final healed = session.state == SessionState.won ? art.sceneDone : null;
+    final healed = session.state == SessionState.won ? _art('done') : null;
     _paintBackdrop(canvas, size,
-        healed ?? (stage is ExtractStage ? art.sceneOpen : null) ?? art.sceneClosed);
+        healed ?? (stage is ExtractStage ? _art('open') : null) ?? _art('closed'));
 
     canvas.save();
     canvas.translate(fit.offset.dx, fit.offset.dy);
@@ -126,14 +130,14 @@ class TablePainter extends CustomPainter {
   }
 
   void _paintScene(Canvas canvas, {required bool opened}) {
-    final closed = art.sceneClosed;
+    final closed = _art('closed');
     if (closed != null) {
       drawCover(canvas, closed, _full);
     } else {
       paintClosedScene(canvas, session.level);
     }
     if (!opened) return;
-    final open = art.sceneOpen;
+    final open = _art('open');
     if (open != null) {
       drawCover(canvas, open, _full);
       return;
@@ -209,31 +213,32 @@ class TablePainter extends CustomPainter {
   // ---------------------------------------------------------------- inject
 
   void _paintSyringe(Canvas canvas, InjectStage stage) {
-    const x = BodyLayout.syringeX;
-    const barrelTop = BodyLayout.plungerStart + 30;
-    const barrelBottom = BodyLayout.plungerEnd + 40;
+    final x = stage.x;
+    final barrelTop = stage.start + 30;
+    final barrelBottom = stage.end + 40;
+    final needleTipY = stage.needleTipY;
     final handleY = stage.handleY;
     final rubberY = handleY + 30;
     final barrel = RRect.fromLTRBR(x - 30, barrelTop, x + 30, barrelBottom, const Radius.circular(8));
 
     // Drop shadow on the drapes.
     canvas.drawRRect(
-      RRect.fromLTRBR(x - 30, handleY - 14, x + 30, BodyLayout.needleTipY, const Radius.circular(10))
+      RRect.fromLTRBR(x - 30, handleY - 14, x + 30, needleTipY, const Radius.circular(10))
           .shift(const Offset(14, 16)),
       Paint()
         ..color = const Color(0x66000000)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12),
     );
 
-    // Needle hub and needle into the IV port.
+    // Needle hub and needle.
     canvas.drawRect(Rect.fromLTRB(x - 10, barrelBottom, x + 10, barrelBottom + 26),
         Paint()..color = const Color(0xFFE6ECEF));
     canvas.drawLine(
-      const Offset(x, barrelBottom + 26),
-      const Offset(x, BodyLayout.needleTipY),
+      Offset(x, barrelBottom + 26),
+      Offset(x, needleTipY),
       Paint()
         ..shader = const LinearGradient(colors: [Color(0xFFF5F7F8), Color(0xFF8C969D)])
-            .createShader(const Rect.fromLTWH(x - 3, 0, 6, 10))
+            .createShader(Rect.fromLTWH(x - 3, 0, 6, 10))
         ..strokeWidth = 5,
     );
 
@@ -290,7 +295,7 @@ class TablePainter extends CustomPainter {
         ..strokeWidth = 6
         ..strokeCap = StrokeCap.round
         ..style = PaintingStyle.stroke;
-      const ax = x + 92;
+      final ax = x + 92;
       final top = handleY + bounce;
       canvas.drawLine(Offset(ax, top), Offset(ax, top + 100), arrow);
       canvas.drawPath(
@@ -324,7 +329,7 @@ class TablePainter extends CustomPainter {
   void _paintXray(Canvas canvas, XrayStage stage) {
     final lens = stage.lens;
     if (lens == null) {
-      _dashedCircle(canvas, BodyLayout.workZone.center, 80 + 6 * math.sin(_t * 3),
+      _dashedCircle(canvas, _scene.workZone.center, 80 + 6 * math.sin(_t * 3),
           const Color(0x88FFFFFF), dashes: 24, width: 3);
       return;
     }
@@ -332,7 +337,7 @@ class TablePainter extends CustomPainter {
     final bounds = Rect.fromCircle(center: lens, radius: radius);
     canvas.save();
     canvas.clipPath(Path()..addOval(bounds));
-    final film = art.sceneXray;
+    final film = _art('xray');
     if (film != null) {
       drawCover(canvas, film, _full);
     } else {
@@ -374,10 +379,41 @@ class TablePainter extends CustomPainter {
 
   void _paintDrawnXray(Canvas canvas, Rect bounds) {
     canvas.drawRect(bounds, Paint()..color = const Color(0xFF050607));
-    canvas.drawRRect(skinWindow.inflate(120),
+    canvas.drawRRect(_scene.skin.inflate(120),
         Paint()
           ..color = const Color(0xFF2A2E31)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 40));
+    switch (_scene.region) {
+      case Region.belly || Region.appendix || Region.gallbladder || Region.flank:
+        _paintTrunkBones(canvas);
+      case Region.hand:
+        _paintLongBones(canvas, count: 4, width: 26, spread: 85);
+      case Region.thigh || Region.knee || Region.shoulder:
+        _paintLongBones(canvas, count: 1, width: 120, spread: 0);
+    }
+  }
+
+  /// Parallel bones running along the incision (fingers, a femur, a humerus).
+  void _paintLongBones(Canvas canvas,
+      {required int count, required double width, required double spread}) {
+    final a = _scene.incisionStart;
+    final b = _scene.incisionEnd;
+    final axis = (b - a) / (b - a).distance;
+    final across = Offset(-axis.dy, axis.dx);
+    final mid = Offset.lerp(a, b, 0.5)! + across * 150;
+    final bone = Paint()
+      ..color = const Color(0xFFDDE3E8)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = width
+      ..strokeCap = StrokeCap.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+    for (var i = 0; i < count; i++) {
+      final offset = across * ((i - (count - 1) / 2) * spread);
+      canvas.drawLine(mid - axis * 600 + offset, mid + axis * 600 + offset, bone);
+    }
+  }
+
+  void _paintTrunkBones(Canvas canvas) {
     final soft = Paint()
       ..color = const Color(0x33A0A8AE)
       ..style = PaintingStyle.stroke
@@ -539,7 +575,7 @@ class TablePainter extends CustomPainter {
   void _paintExtraction(Canvas canvas, ExtractStage stage) {
     // Safe channels between the organs, drawn as a light guidance overlay so
     // the tissue underneath stays visible.
-    final hasPhoto = art.sceneOpen != null;
+    final hasPhoto = _art('open') != null;
     final paths = [
       for (final item in stage.items)
         if (!item.extracted) _pathOf(item.corridor.points),

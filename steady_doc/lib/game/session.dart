@@ -112,7 +112,8 @@ class GameSession extends ChangeNotifier implements StageHost {
         HiddenItem(level.items[i], layout.items[i]),
     ];
     return [
-      if (level.injection) InjectStage(this, speedLimit: level.injectSpeedLimit),
+      if (level.injection)
+        InjectStage(this, speedLimit: level.injectSpeedLimit, top: level.scene.syringe),
       XrayStage(this, items),
       CutStage(this, layout.cut, tolerance: level.cutTolerance),
       ExtractStage(

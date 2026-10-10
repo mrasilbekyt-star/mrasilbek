@@ -5,8 +5,6 @@ import 'package:flutter/painting.dart';
 
 import '../game/levels.dart';
 
-/// The exposed patch of skin between the drapes.
-final RRect skinWindow = BodyLayout.torso;
 
 /// Draws [image] over [dst], cropping it to fill without stretching.
 void drawCover(Canvas canvas, ui.Image image, Rect dst, {Paint? paint}) {
@@ -50,6 +48,7 @@ void paintOrgans(Canvas canvas, LevelDef level, Rect area) {
 }
 
 void _closed(Canvas c, LevelDef level) {
+  final skinWindow = level.scene.skin;
   const full = Rect.fromLTWH(0, 0, 1000, 1400);
 
   // Sterile drapes with soft folds.
@@ -131,19 +130,22 @@ void _closed(Canvas c, LevelDef level) {
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 30),
     );
   }
-  // Costal margin.
+  // Costal margin, on the trunk only.
+  final trunk = const {Region.belly, Region.appendix, Region.gallbladder}.contains(level.scene.region);
   final crease = Paint()
     ..color = const Color(0x22000000)
     ..style = PaintingStyle.stroke
     ..strokeWidth = 8
     ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
-  c.drawPath(
-    Path()
-      ..moveTo(200, 470)
-      ..quadraticBezierTo(380, 330, 500, 360)
-      ..quadraticBezierTo(620, 330, 800, 470),
-    crease,
-  );
+  if (trunk) {
+    c.drawPath(
+      Path()
+        ..moveTo(200, 470)
+        ..quadraticBezierTo(380, 330, 500, 360)
+        ..quadraticBezierTo(620, 330, 800, 470),
+      crease,
+    );
+  }
 
   // Drape edge and towel clips.
   c.drawRRect(

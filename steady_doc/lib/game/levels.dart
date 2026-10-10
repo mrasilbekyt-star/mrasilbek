@@ -10,36 +10,132 @@ import 'geometry.dart';
 abstract final class BodyLayout {
   static const Size design = Size(1000, 1400);
 
-  /// Exposed skin between the drapes. The scene pictures in assets/art/ are
-  /// 3:4 portrait, drawn over the whole canvas (25 units cropped at each side),
-  /// and these coordinates are measured on them.
-  static final RRect torso =
-      RRect.fromLTRBR(160, 180, 840, 1240, const Radius.circular(140));
-
-  /// Where swallowed objects can sit: inside the opened abdomen.
-  static const Rect workZone = Rect.fromLTRB(250, 300, 750, 1130);
-
-  /// Corridors may bend slightly outside [workZone] but never leave the torso.
-  static const Rect corridorZone = Rect.fromLTRB(220, 250, 780, 1160);
-
-  /// The midline incision, where the staples are in scene_done.
-  static const double incisionTop = 340;
-  static const double incisionBottom = 1170;
-
-  /// Syringe for local anesthesia, left of the incision: the plunger handle
-  /// travels from start to end.
-  static const double syringeX = 330;
-  static const double plungerStart = 440;
-  static const double plungerEnd = 720;
-  static const double needleTipY = 850;
-
   /// Steel dish where extracted objects are collected (on the drapes).
   static const Rect tray = Rect.fromLTRB(790, 1170, 990, 1390);
+
+  /// How far the syringe plunger travels, and how far below its end the
+  /// needle tip is.
+  static const double plungerTravel = 280;
+  static const double needleBelowPlunger = 130;
 }
+
+enum Region { belly, hand, appendix, thigh, gallbladder, knee, flank, shoulder }
+
+/// One patient's operating field: which pictures to show and where things are.
+///
+/// Pictures live in assets/art/ as `<id>_closed`, `<id>_open`, `<id>_xray` and
+/// `<id>_done`. They are 3:4 portrait and cover the whole 1000 x 1400 canvas
+/// (25 units cropped at each side); the coordinates below are measured on them.
+class SceneDef {
+  SceneDef({
+    required this.id,
+    required this.region,
+    required this.skin,
+    required this.incisionStart,
+    required this.incisionEnd,
+    required this.workZone,
+    required this.syringe,
+  });
+
+  final String id;
+  final Region region;
+
+  /// Exposed skin between the drapes; everything happens inside it.
+  final RRect skin;
+
+  /// The incision runs from start to end; objects come out at its middle.
+  final Offset incisionStart;
+  final Offset incisionEnd;
+
+  /// Where the findings can sit once the wound is open.
+  final Rect workZone;
+
+  /// Top of the syringe plunger before the injection.
+  final Offset syringe;
+
+  /// Corridors may bend slightly outside [workZone].
+  Rect get corridorZone => workZone.inflate(30);
+}
+
+SceneDef _scene(String id, Region region) => switch (region) {
+      Region.belly => SceneDef(
+          id: id,
+          region: region,
+          skin: RRect.fromLTRBR(160, 180, 840, 1240, const Radius.circular(140)),
+          incisionStart: const Offset(500, 340),
+          incisionEnd: const Offset(500, 1170),
+          workZone: const Rect.fromLTRB(250, 300, 750, 1130),
+          syringe: const Offset(330, 440),
+        ),
+      Region.hand => SceneDef(
+          id: id,
+          region: region,
+          skin: RRect.fromLTRBR(200, 240, 800, 1250, const Radius.circular(160)),
+          incisionStart: const Offset(500, 560),
+          incisionEnd: const Offset(500, 980),
+          workZone: const Rect.fromLTRB(310, 460, 690, 1100),
+          syringe: const Offset(300, 360),
+        ),
+      Region.appendix => SceneDef(
+          id: id,
+          region: region,
+          skin: RRect.fromLTRBR(150, 200, 850, 1240, const Radius.circular(140)),
+          incisionStart: const Offset(360, 500),
+          incisionEnd: const Offset(640, 1000),
+          workZone: const Rect.fromLTRB(240, 330, 760, 1120),
+          syringe: const Offset(280, 360),
+        ),
+      Region.thigh => SceneDef(
+          id: id,
+          region: region,
+          skin: RRect.fromLTRBR(210, 120, 790, 1300, const Radius.circular(200)),
+          incisionStart: const Offset(500, 300),
+          incisionEnd: const Offset(500, 1150),
+          workZone: const Rect.fromLTRB(290, 280, 710, 1160),
+          syringe: const Offset(300, 360),
+        ),
+      Region.gallbladder => SceneDef(
+          id: id,
+          region: region,
+          skin: RRect.fromLTRBR(150, 200, 850, 1240, const Radius.circular(140)),
+          incisionStart: const Offset(300, 560),
+          incisionEnd: const Offset(720, 840),
+          workZone: const Rect.fromLTRB(240, 330, 760, 1120),
+          syringe: const Offset(280, 360),
+        ),
+      Region.knee => SceneDef(
+          id: id,
+          region: region,
+          skin: RRect.fromLTRBR(220, 150, 780, 1280, const Radius.circular(220)),
+          incisionStart: const Offset(500, 380),
+          incisionEnd: const Offset(500, 1080),
+          workZone: const Rect.fromLTRB(300, 330, 700, 1120),
+          syringe: const Offset(300, 360),
+        ),
+      Region.flank => SceneDef(
+          id: id,
+          region: region,
+          skin: RRect.fromLTRBR(120, 240, 880, 1210, const Radius.circular(160)),
+          incisionStart: const Offset(260, 600),
+          incisionEnd: const Offset(740, 880),
+          workZone: const Rect.fromLTRB(220, 350, 780, 1120),
+          syringe: const Offset(260, 300),
+        ),
+      Region.shoulder => SceneDef(
+          id: id,
+          region: region,
+          skin: RRect.fromLTRBR(200, 150, 800, 1260, const Radius.circular(200)),
+          incisionStart: const Offset(470, 360),
+          incisionEnd: const Offset(540, 1060),
+          workZone: const Rect.fromLTRB(290, 320, 710, 1110),
+          syringe: const Offset(300, 360),
+        ),
+    };
 
 enum Sex { male, female }
 
-/// Emoji used to draw each finding until a photo for it is added to assets/art/.
+/// Emoji used to draw each finding until a photo for it (`obj_<id>`) is added
+/// to assets/art/.
 const findingEmoji = {
   'coin': '🪙',
   'ring': '💍',
@@ -48,19 +144,39 @@ const findingEmoji = {
   'battery': '🔋',
   'magnet': '🧲',
   'gallstone': '🪨',
+  'kidneystone': '🪨',
   'bolt': '🔩',
   'pin': '🧷',
   'dice': '🎲',
   'pawn': '♟️',
   'spoon': '🥄',
   'toothbrush': '🪥',
+  'fishhook': '🪝',
+  'appendix': '🪱',
+  'glass': '💎',
+  'bone': '🦴',
+  'metal': '⚙️',
 };
+
+/// What is wrong with a patient, as a key for [Strings.diagnosis].
+enum Diagnosis {
+  foreignBody,
+  fishhook,
+  appendicitis,
+  glass,
+  gallstones,
+  looseBodies,
+  kidneyStones,
+  metal,
+}
 
 class LevelDef {
   const LevelDef({
     required this.number,
     required this.sex,
     required this.age,
+    required this.scene,
+    required this.diagnosis,
     required this.items,
     required this.injection,
     required this.difficulty,
@@ -70,6 +186,8 @@ class LevelDef {
   final int number;
   final Sex sex;
   final int age;
+  final SceneDef scene;
+  final Diagnosis diagnosis;
 
   /// What has to come out, as keys of [findingEmoji].
   final List<String> items;
@@ -80,6 +198,7 @@ class LevelDef {
   /// 0 for the first patient, 1 for the hardest one.
   final double difficulty;
 
+  /// Skin tone for the drawn scene, used until the patient's pictures exist.
   final Color skin;
 
   int get seed => number * 7919 + 17;
@@ -93,7 +212,10 @@ class LevelDef {
               ? 2
               : 3;
   double get corridorAmplitude => mix(22, 60, difficulty);
-  double get minExitDistance => mix(130, 270, difficulty);
+
+  /// How far the findings sit from the opening, shortened for small fields.
+  double get minExitDistance =>
+      math.min(mix(130, 270, difficulty), scene.workZone.shortestSide * 0.6);
 
   int get cutWaves => difficulty < 0.3
       ? 1
@@ -103,7 +225,8 @@ class LevelDef {
   double get cutAmplitude => mix(6, 30, difficulty);
   double get cutTolerance => mix(58, 32, difficulty);
 
-  int get stitchCount => 7 + (difficulty * 5).round();
+  /// Distance between stitches along the incision.
+  double get stitchSpacing => mix(115, 72, difficulty);
   double get stitchHitRadius => mix(44, 28, difficulty);
   double get stitchTolerance => mix(78, 46, difficulty);
 
@@ -113,30 +236,22 @@ class LevelDef {
   double get bpmPerMistake => mix(12, 19, difficulty);
 }
 
-const _skins = [
-  Color(0xFFE3B694),
-  Color(0xFFD29E78),
-  Color(0xFFB98260),
-  Color(0xFFEBC3A6),
-  Color(0xFF9A6646),
-];
-
 final List<LevelDef> levels = _buildLevels();
 
 List<LevelDef> _buildLevels() {
-  const cases = <(Sex, int, List<String>)>[
-    (Sex.male, 24, ['coin']),
-    (Sex.female, 31, ['ring']),
-    (Sex.male, 45, ['key', 'coin']),
-    (Sex.female, 67, ['denture']),
-    (Sex.male, 19, ['battery', 'magnet']),
-    (Sex.female, 52, ['gallstone', 'gallstone']),
-    (Sex.male, 38, ['bolt', 'pin']),
-    (Sex.female, 27, ['pin', 'ring']),
-    (Sex.male, 33, ['dice', 'pawn']),
-    (Sex.male, 58, ['spoon', 'toothbrush']),
-    (Sex.female, 41, ['magnet', 'magnet', 'battery']),
-    (Sex.male, 49, ['key', 'bolt', 'coin']),
+  const cases = <(Sex, int, String, Region, Diagnosis, List<String>, Color)>[
+    (Sex.male, 24, 'belly_a', Region.belly, Diagnosis.foreignBody, ['coin'], Color(0xFFE3B694)),
+    (Sex.male, 45, 'hand_a', Region.hand, Diagnosis.fishhook, ['fishhook'], Color(0xFFC68E6A)),
+    (Sex.female, 19, 'appendix_a', Region.appendix, Diagnosis.appendicitis, ['appendix'], Color(0xFFD1A47A)),
+    (Sex.male, 28, 'thigh_a', Region.thigh, Diagnosis.glass, ['glass', 'glass'], Color(0xFF6B4430)),
+    (Sex.female, 31, 'belly_b', Region.belly, Diagnosis.foreignBody, ['ring', 'pin'], Color(0xFFA8754F)),
+    (Sex.male, 54, 'gall_a', Region.gallbladder, Diagnosis.gallstones, ['gallstone', 'gallstone'], Color(0xFFEFCFB8)),
+    (Sex.female, 36, 'knee_a', Region.knee, Diagnosis.looseBodies, ['bone', 'bone'], Color(0xFFF1D2BE)),
+    (Sex.male, 63, 'flank_a', Region.flank, Diagnosis.kidneyStones, ['kidneystone', 'kidneystone'], Color(0xFFB98260)),
+    (Sex.male, 19, 'belly_c', Region.belly, Diagnosis.foreignBody, ['battery', 'magnet', 'dice'], Color(0xFFC4936B)),
+    (Sex.male, 41, 'shoulder_a', Region.shoulder, Diagnosis.metal, ['metal', 'metal', 'metal'], Color(0xFFB07A55)),
+    (Sex.female, 70, 'belly_d', Region.belly, Diagnosis.foreignBody, ['denture', 'spoon'], Color(0xFFEBD3C4)),
+    (Sex.male, 49, 'belly_e', Region.belly, Diagnosis.foreignBody, ['key', 'bolt', 'toothbrush'], Color(0xFF5E3A28)),
   ];
   return [
     for (var i = 0; i < cases.length; i++)
@@ -144,10 +259,12 @@ List<LevelDef> _buildLevels() {
         number: i + 1,
         sex: cases[i].$1,
         age: cases[i].$2,
-        items: cases[i].$3,
+        scene: _scene(cases[i].$3, cases[i].$4),
+        diagnosis: cases[i].$5,
+        items: cases[i].$6,
         injection: i > 0,
         difficulty: i / (cases.length - 1),
-        skin: _skins[i % _skins.length],
+        skin: cases[i].$7,
       ),
   ];
 }
@@ -162,7 +279,7 @@ class LevelLayout {
     required this.stitchTargets,
   });
 
-  /// The incision, from top to bottom.
+  /// The incision, from the scene's start point to its end point.
   final Polyline cut;
 
   /// Opening in the incision where objects are pulled out.
@@ -178,39 +295,46 @@ class LevelLayout {
   final List<Offset> stitchTargets;
 
   factory LevelLayout.generate(LevelDef level) {
+    final scene = level.scene;
     final rnd = math.Random(level.seed);
     double between(double a, double b) => a + rnd.nextDouble() * (b - a);
 
-    // Incision: a gentle wave down the middle of the torso.
+    // Incision: a gentle wave along the scene's incision line.
+    final a = scene.incisionStart;
+    final b = scene.incisionEnd;
+    final axis = (b - a) / (b - a).distance;
+    final across = Offset(-axis.dy, axis.dx);
     final phase = rnd.nextBool() ? 1.0 : -1.0;
     final cutPts = <Offset>[];
     const steps = 80;
     for (var j = 0; j <= steps; j++) {
       final t = j / steps;
-      cutPts.add(Offset(
-        500 + phase * level.cutAmplitude * math.sin(math.pi * level.cutWaves * t),
-        mix(BodyLayout.incisionTop, BodyLayout.incisionBottom, t),
-      ));
+      cutPts.add(Offset.lerp(a, b, t)! +
+          across * (phase * level.cutAmplitude * math.sin(math.pi * level.cutWaves * t)));
     }
     final cut = Polyline(resample(cutPts, 6));
     final exit = cut.at(cut.length / 2);
 
-    // Objects: alternate left and right of the incision, away from the exit
+    // Objects: alternate sides of the incision, away from it, from the exit
     // and from each other.
+    double side(Offset p) {
+      final d = p - a;
+      return d.dx * across.dx + d.dy * across.dy;
+    }
+
+    final zone = scene.workZone;
     final items = <Offset>[];
     for (var i = 0; i < level.items.length; i++) {
-      final left = i.isEven;
+      final wantSide = i.isEven ? -1.0 : 1.0;
       Offset? chosen;
-      Offset candidate = Offset.zero;
-      for (var attempt = 0; attempt < 300 && chosen == null; attempt++) {
-        candidate = Offset(
-          left ? between(275, 420) : between(580, 725),
-          between(330, 1100),
-        );
+      Offset candidate = zone.center;
+      for (var attempt = 0; attempt < 600 && chosen == null; attempt++) {
+        candidate = Offset(between(zone.left + 25, zone.right - 25),
+            between(zone.top + 25, zone.bottom - 25));
+        final offCut = side(candidate) * wantSide >= 75;
         final farFromExit = (candidate - exit).distance >= level.minExitDistance;
-        final farFromOthers =
-            items.every((q) => (candidate - q).distance >= 170);
-        if (farFromExit && farFromOthers) chosen = candidate;
+        final farFromOthers = items.every((q) => (candidate - q).distance >= 150);
+        if (offCut && farFromExit && farFromOthers) chosen = candidate;
       }
       items.add(chosen ?? candidate);
     }
@@ -230,18 +354,18 @@ class LevelLayout {
       for (var j = 0; j <= n; j++) {
         final t = j / n;
         final p = start + delta * t + normal * (sign * amp * math.sin(math.pi * waves * t));
-        pts.add(clampToRect(p, BodyLayout.corridorZone));
+        pts.add(clampToRect(p, scene.corridorZone));
       }
       corridors.add(Polyline(resample(pts, 6)));
     }
 
-    // Stitches zigzag across the incision.
+    // Stitches zigzag across the incision, spaced for its length.
     final stitchTargets = <Offset>[];
-    final count = level.stitchCount;
+    final count = (cut.length / level.stitchSpacing).round().clamp(5, 14);
     for (var i = 0; i < count; i++) {
       final s = cut.length * (i + 0.5) / count;
-      final side = i.isEven ? 1.0 : -1.0;
-      stitchTargets.add(cut.at(s) + cut.normalAt(s) * (42 * side));
+      final sideSign = i.isEven ? 1.0 : -1.0;
+      stitchTargets.add(cut.at(s) + cut.normalAt(s) * (42 * sideSign));
     }
 
     return LevelLayout._(

@@ -7,16 +7,17 @@ import 'test_utils.dart';
 void main() {
   final level = levels[5];
   final layout = LevelLayout.generate(level);
+  const syringe = Offset(330, 440);
 
   group('injection', () {
     test('a slow push finishes without mistakes', () {
       final host = FakeHost();
-      final stage = InjectStage(host, speedLimit: 150);
+      final stage = InjectStage(host, speedLimit: 150, top: syringe);
       stage.down(PenSample(stage.handle, 0));
       var t = 0.0;
-      for (var y = BodyLayout.plungerStart; y <= BodyLayout.plungerEnd + 4; y += 2) {
+      for (var y = stage.start; y <= stage.end + 4; y += 2) {
         t += 0.02; // 100 units per second
-        stage.move(PenSample(Offset(BodyLayout.syringeX, y), t));
+        stage.move(PenSample(Offset(stage.x, y), t));
       }
       expect(stage.isComplete, isTrue);
       expect(host.mistakes, isEmpty);
@@ -24,7 +25,7 @@ void main() {
 
     test('rushing hurts', () {
       final host = FakeHost();
-      final stage = InjectStage(host, speedLimit: 150);
+      final stage = InjectStage(host, speedLimit: 150, top: syringe);
       stage.down(PenSample(stage.handle, 0));
       stage.move(PenSample(stage.handle + const Offset(0, 60), 0.02));
       stage.move(PenSample(stage.handle + const Offset(0, 60), 0.04));
@@ -33,7 +34,7 @@ void main() {
 
     test('pressing the S Pen too hard hurts', () {
       final host = FakeHost();
-      final stage = InjectStage(host, speedLimit: 150);
+      final stage = InjectStage(host, speedLimit: 150, top: syringe);
       stage.down(PenSample(stage.handle, 0, stylus: true, pressure: 0.5));
       stage.move(PenSample(stage.handle + const Offset(0, 1), 0.05,
           stylus: true, pressure: 0.99));
@@ -42,7 +43,7 @@ void main() {
 
     test('grabbing away from the plunger does nothing', () {
       final host = FakeHost();
-      final stage = InjectStage(host, speedLimit: 150);
+      final stage = InjectStage(host, speedLimit: 150, top: syringe);
       stage.down(const PenSample(Offset(600, 900), 0));
       stage.move(const PenSample(Offset(600, 1200), 0.1));
       expect(stage.progress, 0);

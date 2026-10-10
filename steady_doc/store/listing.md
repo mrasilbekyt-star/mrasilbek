@@ -27,7 +27,7 @@ Natijada o'yinga taxminan 16+ yosh chegarasi qo'yiladi.
 Realistic surgery simulator: X-ray, incision, extraction, sutures. S Pen ready.
 
 **Full description:**
-Real emergency cases are waiting: a swallowed coin, a battery, magnets, a denture, gallstones... You are the surgeon. Every patient needs a steady hand.
+Twelve real patients, twelve different cases: a swallowed coin, a fish hook in the palm, acute appendicitis, glass shards in the thigh, gallstones, loose fragments in the knee, kidney stones, metal fragments in the shoulder... You are the surgeon. Every patient needs a steady hand.
 
 • X-RAY — hover your S Pen over the abdomen to locate the foreign body. No touching needed.
 • INCISION — follow the surgical marking with your scalpel. Press too hard and you cut too deep.
@@ -43,7 +43,7 @@ MADE FOR THE S PEN
 • Palm rejection: rest your hand on the screen while you operate
 Also fully playable with a finger.
 
-• 12 clinical cases with rising difficulty
+• 12 different patients and diagnoses, from the hand to the abdomen
 • Up to 3 stars for every operation
 • Works offline, no account needed
 • English, Uzbek and Russian
@@ -60,7 +60,7 @@ Contains realistic depictions of surgery.
 Haqiqiy jarrohlik simulyatori: rentgen, kesish, chiqarish, choklar. S Pen uchun.
 
 **To'liq tavsif:**
-Sizni haqiqiy shoshilinch holatlar kutmoqda: yutib yuborilgan tanga, batareya, magnitlar, tish protezi, o't toshlari... Jarroh siz. Har bir bemorga titramaydigan qo'l kerak.
+O'n ikki bemor, o'n ikki xil holat: yutib yuborilgan tanga, kaftga kirgan qarmoq, o'tkir appenditsit, sondagi shisha parchalari, o't toshlari, tizzadagi suyak parchalari, buyrak toshlari, yelkadagi metall parchalari... Jarroh siz. Har bir bemorga titramaydigan qo'l kerak.
 
 • RENTGEN — S Pen'ni qorin ustida tegizmasdan yurgizib, yot jismni toping.
 • KESISH — skalpel bilan jarrohlik belgisi bo'ylab kesing. Qattiq bossangiz, juda chuqur kesib yuborasiz.
@@ -76,7 +76,7 @@ S PEN UCHUN YARATILGAN
 • Kaftni sezmaydi: operatsiya paytida qo'lingizni ekranga qo'yishingiz mumkin
 Barmoq bilan ham to'liq o'ynaladi.
 
-• Qiyinligi oshib boradigan 12 ta klinik holat
+• 12 xil bemor va tashxis: kaftdan qoringacha
 • Har bir operatsiya uchun 3 tagacha yulduz
 • Internetsiz ishlaydi, ro'yxatdan o'tish shart emas
 • O'zbek, ingliz va rus tillarida
@@ -93,7 +93,7 @@ Jarrohlikning real tasvirlari mavjud.
 Реалистичный симулятор хирурга: рентген, разрез, извлечение, швы. Для S Pen.
 
 **Полное описание:**
-Вас ждут настоящие экстренные случаи: проглоченная монета, батарейка, магниты, зубной протез, желчные камни... Хирург — вы. Каждому пациенту нужна твёрдая рука.
+Двенадцать пациентов, двенадцать разных случаев: проглоченная монета, рыболовный крючок в ладони, острый аппендицит, осколки стекла в бедре, желчные камни, костные фрагменты в колене, камни в почках, металлические осколки в плече... Хирург — вы. Каждому пациенту нужна твёрдая рука.
 
 • РЕНТГЕН — водите S Pen над животом и найдите инородное тело, не касаясь экрана.
 • РАЗРЕЗ — ведите скальпель по хирургической разметке. Надавите сильнее — и разрез будет слишком глубоким.
@@ -109,7 +109,7 @@ Jarrohlikning real tasvirlari mavjud.
 • Защита от касания ладонью: можно опираться рукой на экран
 Играть пальцем тоже можно полностью.
 
-• 12 клинических случаев с растущей сложностью
+• 12 разных пациентов и диагнозов: от ладони до живота
 • До 3 звёзд за каждую операцию
 • Работает без интернета, без регистрации
 • Английский, узбекский и русский языки

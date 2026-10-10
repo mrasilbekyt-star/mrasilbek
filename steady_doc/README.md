@@ -83,23 +83,48 @@ Tayyor fayl: `build/app/outputs/bundle/release/app-release.aab`.
 **Galaxy Store** (ixtiyoriy): seller.samsungapps.com orqali o'sha AAB faylni yuklasa bo'ladi.
 U yerda raqobat kamroq va S Pen o'yinlari ko'proq ko'rinadi.
 
+## Bemorlar
+
+Har bir bemor alohida odam, o'z kasalligi va o'z sahnasi bilan (`lib/game/levels.dart`):
+
+| # | Bemor | Tashxis | Sahna (`assets/art/<sahna>_*`) | Rasmlar |
+|---|---|---|---|---|
+| 1 | Erkak, 24 | Yutib yuborilgan tanga | `belly_a` (qorin) | ✅ |
+| 2 | Erkak, 45 | Kaftga kirgan qarmoq | `hand_a` (kaft) | ⏳ |
+| 3 | Ayol, 19 | O'tkir appenditsit | `appendix_a` (qorinning o'ng pasti) | ⏳ |
+| 4 | Erkak, 28 | Sondagi shisha parchalari | `thigh_a` (son) | ⏳ |
+| 5 | Ayol, 31 | Uzuk va to'g'nag'ich | `belly_b` (qorin) | ⏳ |
+| 6 | Erkak, 54 | O't tosh kasalligi | `gall_a` (qovurg'a osti) | ⏳ |
+| 7 | Ayol, 36 | Tizzadagi suyak parchalari | `knee_a` (tizza) | ⏳ |
+| 8 | Erkak, 63 | Buyrak toshlari | `flank_a` (biqin) | ⏳ |
+| 9 | Erkak, 19 | Batareya, magnit, soqqa | `belly_c` (qorin) | ⏳ |
+| 10 | Erkak, 41 | Yelkadagi metall parchalari | `shoulder_a` (yelka) | ⏳ |
+| 11 | Ayol, 70 | Tish protezi va qoshiq | `belly_d` (qorin) | ⏳ |
+| 12 | Erkak, 49 | Kalit, bolt, tish cho'tkasi | `belly_e` (qorin) | ⏳ |
+
 ## Real grafika (`assets/art/`)
 
 O'yin `assets/art/` papkasidagi rasmlarni (JPG yoki PNG) avtomatik ishlatadi. Qaysi fayl bo'lmasa,
 o'rniga kod bilan chizilgan grafika chiqadi.
 
-| Fayl | Nima | Holati |
-|---|---|---|
-| `scene_closed` | Bemor tepadan, qorin yopiq, yod surtilgan | ✅ bor |
-| `scene_open` | Xuddi shu kadr, qorin ochilgan, organlar ko'rinadi | ✅ bor |
-| `scene_xray` | Xuddi shu kadrning rentgen surati | ✅ bor |
-| `scene_done` | Operatsiyadan keyin, kesik tikilgan (g'alaba ekrani orqasida) | ✅ bor |
-| `tool_forceps` | Pinset, foni shaffof, uchi pastda | ⏳ kerak |
-| `obj_<nom>` | Chiqariladigan narsa, foni shaffof, masalan `obj_coin.png`. Nomlar: `lib/game/levels.dart` → `findingEmoji` | ⏳ kerak (hozircha emoji) |
+| Fayl | Nima |
+|---|---|
+| `<sahna>_closed` | Operatsiya joyi tepadan, teri yopiq, yod surtilgan, atrofi yashil mato |
+| `<sahna>_open` | Xuddi shu kadr, yara ochilgan |
+| `<sahna>_xray` | Xuddi shu kadrning rentgen surati |
+| `<sahna>_done` | (ixtiyoriy) Operatsiyadan keyin, yara tikilgan |
+| `tool_forceps` | Pinset, foni shaffof, uchi pastda ✅ |
+| `obj_<nom>` | Chiqariladigan narsa, foni shaffof ✅ 13 tasi bor; `fishhook`, `appendix`, `glass`, `bone`, `kidneystone`, `metal` hali emoji |
 
-Sahna rasmlari tik (3:4) va bir xil kadrda bo'lishi kerak. Ular 1000 × 1400 maydonni to'liq qoplaydi.
-Kesik, yo'laklar va chiqish nuqtasi shu rasmlarga moslangan (`lib/game/levels.dart` → `BodyLayout`).
-Sahnani boshqa rasmga almashtirsangiz, bu koordinatalarni ham yangilash kerak.
+Sahna rasmlari tik (3:4) va bir xil kadrda bo'lishi kerak; ular 1000 × 1400 maydonni to'liq qoplaydi.
+Har bir sahnaning kesik chizig'i, narsalar zonasi va shprits joyi `levels.dart` → `_scene()` da.
+Yangi rasm qo'yilgach, shu koordinatalarni rasmdagi anatomiyaga moslash kerak.
+
+**Yordamchi skriptlar:**
+- `python3 -I tool/cutout.py <rasm> assets/art coin ring ... --holes ring` — oq fondagi narsalarni
+  qirqib, shaffof PNG qiladi.
+- `GEMINI_API_KEY=... python3 tool/gen_art.py <chiqish.jpg> "<prompt>" --ref <misol.jpg>` — Gemini API
+  bilan rasm yaratadi (billing yoqilgan kalit kerak, bepul tarifda rasm limiti 0).
 
 ## Loyiha tuzilishi
 

@@ -86,10 +86,20 @@ class _Speedometer {
 
 /// Anesthesia: drag the syringe plunger down slowly.
 class InjectStage extends Stage {
-  InjectStage(super.host, {required this.speedLimit});
+  InjectStage(super.host, {required this.speedLimit, required Offset top})
+      : x = top.dx,
+        start = top.dy,
+        handleY = top.dy;
 
   final double speedLimit;
-  double handleY = BodyLayout.plungerStart;
+
+  /// The plunger handle moves straight down at [x], from [start] to [end].
+  final double x;
+  final double start;
+  double get end => start + BodyLayout.plungerTravel;
+  double get needleTipY => end + BodyLayout.needleBelowPlunger;
+
+  double handleY;
   bool grabbed = false;
   double _grabOffset = 0;
   double _lastY = 0;
@@ -98,17 +108,16 @@ class InjectStage extends Stage {
 
   static const double grabRadius = 85;
 
-  Offset get handle => Offset(BodyLayout.syringeX, handleY);
+  Offset get handle => Offset(x, handleY);
 
   @override
   StageKind get kind => StageKind.inject;
 
   @override
-  bool get isComplete => handleY >= BodyLayout.plungerEnd - 0.5;
+  bool get isComplete => handleY >= end - 0.5;
 
   @override
-  double get progress => (handleY - BodyLayout.plungerStart) /
-      (BodyLayout.plungerEnd - BodyLayout.plungerStart);
+  double get progress => (handleY - start) / (end - start);
 
   @override
   void down(PenSample s) {
@@ -124,7 +133,7 @@ class InjectStage extends Stage {
   void move(PenSample s) {
     if (!grabbed || isComplete) return;
     final target = (s.pos.dy + _grabOffset)
-        .clamp(handleY, BodyLayout.plungerEnd)
+        .clamp(handleY, end)
         .toDouble();
     final dt = s.time - _lastTime;
     if (dt > 0.001) {

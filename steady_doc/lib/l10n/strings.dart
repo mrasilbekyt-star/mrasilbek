@@ -48,6 +48,27 @@ class Strings {
   String get toRemove =>
       _t('Olib tashlash kerak:', 'To remove:', 'Удалить:');
 
+  String get diagnosisLabel => _t('Tashxis:', 'Diagnosis:', 'Диагноз:');
+
+  String diagnosis(Diagnosis d) => switch (d) {
+        Diagnosis.foreignBody => _t('Yutib yuborilgan yot jism',
+            'Swallowed foreign body', 'Проглоченное инородное тело'),
+        Diagnosis.fishhook => _t('Kaftga kirgan qarmoq', 'Fish hook in the palm',
+            'Рыболовный крючок в ладони'),
+        Diagnosis.appendicitis =>
+          _t("O'tkir appenditsit", 'Acute appendicitis', 'Острый аппендицит'),
+        Diagnosis.glass => _t('Sondagi shisha parchalari', 'Glass shards in the thigh',
+            'Осколки стекла в бедре'),
+        Diagnosis.gallstones =>
+          _t("O't tosh kasalligi", 'Gallstones', 'Желчнокаменная болезнь'),
+        Diagnosis.looseBodies => _t('Tizzadagi suyak parchalari',
+            'Loose bone fragments in the knee', 'Костные фрагменты в колене'),
+        Diagnosis.kidneyStones =>
+          _t('Buyrak tosh kasalligi', 'Kidney stones', 'Мочекаменная болезнь'),
+        Diagnosis.metal => _t('Yelkadagi metall parchalari',
+            'Metal fragments in the shoulder', 'Металлические осколки в плече'),
+      };
+
   String patient(Sex sex, int age) => switch (lang) {
         'uz' => '${sex == Sex.male ? 'Erkak' : 'Ayol'}, $age yosh',
         'ru' => '${sex == Sex.male ? 'Мужчина' : 'Женщина'}, $age ${_years(age)}',
@@ -74,6 +95,12 @@ class Strings {
         'pawn' => _t('shaxmat donasi', 'chess pawn', 'шахматная пешка'),
         'spoon' => _t('qoshiq', 'spoon', 'ложка'),
         'toothbrush' => _t("tish cho'tkasi", 'toothbrush', 'зубная щётка'),
+        'kidneystone' => _t('buyrak toshi', 'kidney stone', 'почечный камень'),
+        'fishhook' => _t('qarmoq', 'fish hook', 'рыболовный крючок'),
+        'appendix' => _t("yallig'langan appendiks", 'inflamed appendix', 'воспалённый аппендикс'),
+        'glass' => _t('shisha parchasi', 'glass shard', 'осколок стекла'),
+        'bone' => _t('suyak parchasi', 'bone fragment', 'костный фрагмент'),
+        'metal' => _t('metall parcha', 'metal fragment', 'металлический осколок'),
         _ => id,
       };
 

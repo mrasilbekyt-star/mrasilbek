@@ -230,7 +230,7 @@ class _GameScreenState extends State<GameScreen>
                       color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700),
                 ),
                 Text(
-                  '${s.toRemove} ${s.findings(level.items)}',
+                  '${s.diagnosisLabel} ${s.diagnosis(level.diagnosis)} · ${s.findings(level.items)}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(color: Colors.white60, fontSize: 13),
