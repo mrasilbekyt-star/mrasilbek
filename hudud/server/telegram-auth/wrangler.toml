@@ -1,0 +1,9 @@
+name = "hudud-auth"
+main = "worker.js"
+compatibility_date = "2025-06-01"
+
+# Create it with: npx wrangler kv namespace create AUTH
+# and paste the id it prints here.
+[[kv_namespaces]]
+binding = "AUTH"
+id = "PASTE_KV_NAMESPACE_ID"

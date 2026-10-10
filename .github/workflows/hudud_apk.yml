@@ -1,0 +1,74 @@
+# Builds a test APK of Hudud and attaches it to the "hudud-test" release, so
+# it can be downloaded straight onto a phone. Test builds let Pro be switched
+# on in Settings without paying (PRO_PREVIEW).
+name: Hudud APK
+
+on:
+  push:
+    paths:
+      - 'hudud/**'
+      - '.github/workflows/hudud_apk.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hudud-apk
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: hudud
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          # maplibre_gl compiles its Android code for Java 21.
+          java-version: '21'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.7'
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
+      # Telegram sign-in is switched on by the repository variables
+      # HUDUD_TELEGRAM_BOT and HUDUD_AUTH_SERVER (see hudud/server/telegram-auth).
+      # One APK per processor type: much smaller downloads than one APK for
+      # all of them. arm64 fits nearly every phone from the last eight years.
+      - run: >-
+          flutter build apk --release --split-per-abi
+          --dart-define=PRO_PREVIEW=true
+          --dart-define=TELEGRAM_BOT=${{ vars.HUDUD_TELEGRAM_BOT }}
+          --dart-define=AUTH_SERVER=${{ vars.HUDUD_AUTH_SERVER }}
+
+      - name: Rename
+        run: |
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk hudud.apk
+          cp build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk hudud-old-phones.apk
+          ls -la hudud*.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hudud-apk
+          path: hudud/hudud*.apk
+
+      - name: Publish to the hudud-test release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete hudud-test --yes --cleanup-tag || true
+          gh release create hudud-test hudud.apk hudud-old-phones.apk \
+            --target "$GITHUB_SHA" --prerelease \
+            --title "Hudud — test APK" \
+            --notes "Branch ${GITHUB_REF_NAME}, commit ${GITHUB_SHA::7}. hudud.apk deyarli barcha telefonlar uchun; hudud-old-phones.apk eski (32-bit) telefonlar uchun. O'rnatishda noma'lum manbalarga ruxsat bering."
