@@ -67,6 +67,14 @@ android {
         }
     }
 
+    // Compress native libraries inside the APK: a download about half the
+    // size, at the cost of unpacking them once on install.
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+
     buildTypes {
         release {
             // Without key.properties the release build is signed with the test
