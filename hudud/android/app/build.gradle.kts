@@ -23,7 +23,9 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "uz.mrasilbek.hudud"
-    compileSdk = flutter.compileSdkVersion
+    // permission_handler compiles against Android 37; newer SDKs build older
+    // targets fine.
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
