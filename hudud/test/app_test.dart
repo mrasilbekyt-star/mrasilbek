@@ -11,6 +11,7 @@ import 'package:hudud/data/stats.dart';
 import 'package:hudud/data/store.dart';
 import 'package:hudud/l10n/strings.dart';
 import 'package:hudud/map/hudud_map.dart';
+import 'package:hudud/services/auth.dart';
 import 'package:hudud/services/gpx.dart';
 import 'package:hudud/services/pro.dart';
 import 'package:hudud/ui/home_screen.dart';
@@ -20,8 +21,9 @@ Future<AppServices> services({Map<String, Object> prefs = const {}}) async {
   SharedPreferences.setMockInitialValues({'lang': 'uz', ...prefs});
   final settings = await Settings.load();
   final store = HududStore(Directory.systemTemp.createTempSync('hudud_test'));
-  final pro = ProService(settings, await SharedPreferences.getInstance());
-  return AppServices(settings: settings, store: store, pro: pro);
+  final prefsInstance = await SharedPreferences.getInstance();
+  final pro = ProService(settings, prefsInstance);
+  return AppServices(settings: settings, store: store, pro: pro, auth: AuthService(prefsInstance));
 }
 
 RunRecord record(String id, DateTime start, {double km = 5, double area = 20000, int loops = 1}) => RunRecord(
@@ -67,6 +69,11 @@ void main() {
     await settle(tester);
     await tester.tap(find.text(s.letsGo));
     await settle(tester);
+    // Without Firebase set up, sign-in explains itself and offers guest mode.
+    expect(find.text(s.signInTitle), findsOneWidget);
+    expect(find.text(s.signInNotReady), findsOneWidget);
+    await tester.tap(find.text(s.later));
+    await settle(tester);
     expect(find.byType(HomeScreen), findsOneWidget);
     expect(find.text(s.start), findsOneWidget);
   });
@@ -74,7 +81,7 @@ void main() {
   testWidgets('every screen opens from home in all three languages', (tester) async {
     phone(tester);
     for (final lang in Strings.supported) {
-      final app = await services(prefs: {'onboarded': true, 'lang': lang});
+      final app = await services(prefs: {'onboarded': true, 'guest': true, 'lang': lang});
       await tester.pumpWidget(HududApp(services: app));
       await tester.pump();
       final s = app.settings.strings;
@@ -97,7 +104,7 @@ void main() {
 
   testWidgets('a demo run claims land, shows the summary and saves nothing', (tester) async {
     phone(tester);
-    final app = await services(prefs: {'onboarded': true, 'voice': false});
+    final app = await services(prefs: {'onboarded': true, 'guest': true, 'voice': false});
     await tester.pumpWidget(HududApp(services: app));
     await tester.pump();
     final s = app.settings.strings;

@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'data/settings.dart';
 import 'data/store.dart';
 import 'map/map_style.dart';
+import 'services/auth.dart';
 import 'services/coach.dart';
 import 'services/phone_fitness.dart';
 import 'services/pro.dart';
 import 'ui/home_screen.dart';
+import 'ui/login_screen.dart';
 import 'ui/onboarding.dart';
 import 'ui/theme.dart';
 
@@ -16,6 +18,7 @@ class AppServices {
     required this.settings,
     required this.store,
     required this.pro,
+    required this.auth,
     VoiceCoach? coach,
     PhoneFitness? fitness,
   })  : coach = coach ?? VoiceCoach(),
@@ -24,6 +27,7 @@ class AppServices {
   final Settings settings;
   final HududStore store;
   final ProService pro;
+  final AuthService auth;
   final VoiceCoach coach;
   final PhoneFitness fitness;
 
@@ -37,7 +41,7 @@ class AppServices {
   }
 
   /// Fires when settings, saved runs or the Pro status change.
-  late final Listenable changes = Listenable.merge([settings, store, pro]);
+  late final Listenable changes = Listenable.merge([settings, store, pro, auth]);
 }
 
 /// Gives every screen the services, and rebuilds the ones that use [of]
@@ -69,7 +73,11 @@ class HududApp extends StatelessWidget {
             title: 'Hudud',
             debugShowCheckedModeBanner: false,
             theme: hududTheme(services.skin),
-            home: services.settings.onboarded ? const HomeScreen() : const OnboardingScreen(),
+            home: !services.settings.onboarded
+                ? const OnboardingScreen()
+                : services.auth.needsSignIn
+                    ? const LoginScreen()
+                    : const HomeScreen(),
           ),
         ),
       );

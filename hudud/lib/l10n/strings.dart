@@ -387,6 +387,46 @@ class Strings {
       );
   String get letsGo => _t('Boshladik!', "Let's go!", 'Поехали!');
 
+  // ------------------------------------------------------------------ account
+
+  String get signInTitle => _t('Hududingizni saqlang', 'Keep your land', 'Сохраните свою землю');
+  String get signInText => _t(
+        "Hisob bilan hududingiz telefon almashsa ham yo'qolmaydi. Tez orada boshqa yuguruvchilar bilan bellashasiz.",
+        'With an account your land survives a new phone. Soon you will compete with other runners.',
+        'С аккаунтом земля не пропадёт при смене телефона. Скоро — соревнования с другими бегунами.',
+      );
+  String get withGoogle => _t('Google orqali kirish', 'Continue with Google', 'Войти через Google');
+  String get withTelegram => _t('Telefon raqam bilan (Telegram)', 'Phone number (Telegram)', 'По номеру телефона (Telegram)');
+  String get telegramHint => _t(
+        'Telegram ochiladi: bitta tugma bilan raqamingizni yuborasiz va shu yerga qaytasiz. SMS kerak emas.',
+        'Telegram opens: send your number with one tap and come back here. No SMS needed.',
+        'Откроется Telegram: отправьте номер одной кнопкой и вернитесь сюда. Без SMS.',
+      );
+  String get waitingTelegram => _t('Telegramda tasdiqlash kutilmoqda…', 'Waiting for Telegram…', 'Ждём подтверждения в Telegram…');
+  String get later => _t('Keyinroq', 'Later', 'Позже');
+  String get signInNotReady => _t(
+        "Kirish hali sozlanmagan. Hozircha mehmon sifatida foydalaning: hamma narsa ishlaydi, ma'lumotlar telefonda saqlanadi.",
+        'Sign-in is not set up yet. Use the app as a guest for now: everything works and stays on this phone.',
+        'Вход пока не настроен. Пользуйтесь как гость: всё работает, данные хранятся на телефоне.',
+      );
+  String get signInFailed => _t("Kirib bo'lmadi. Qayta urinib ko'ring.", 'Could not sign in. Please try again.', 'Не удалось войти. Попробуйте ещё раз.');
+  String get noInternet => _t("Internet yo'q. Ulanib, qayta urinib ko'ring.", 'No internet. Connect and try again.', 'Нет интернета. Подключитесь и попробуйте снова.');
+  String get account => _t('Hisob', 'Account', 'Аккаунт');
+  String get guestMode => _t('Mehmon rejimi', 'Guest mode', 'Гостевой режим');
+  String get signIn => _t('Kirish', 'Sign in', 'Войти');
+  String get signOut => _t('Chiqish', 'Sign out', 'Выйти');
+  String get deleteAccount => _t("Hisobni o'chirish", 'Delete account', 'Удалить аккаунт');
+  String get deleteAccountConfirm => _t(
+        "Hisobingiz o'chiriladi. Telefondagi yugurishlar qoladi. Davom etasizmi?",
+        'Your account will be deleted. Runs on this phone stay. Continue?',
+        'Аккаунт будет удалён. Пробежки на телефоне останутся. Продолжить?',
+      );
+  String get reauthNeeded => _t(
+        "Xavfsizlik uchun qaytadan kiring, keyin hisobni o'chirishingiz mumkin.",
+        'For security, sign in again and then delete the account.',
+        'Для безопасности войдите снова, затем удалите аккаунт.',
+      );
+
   // ------------------------------------------------------------------ voice coach
 
   String get sayStart => _t('Yugurish boshlandi. Omad!', 'Run started. Good luck!', 'Пробежка началась. Удачи!');

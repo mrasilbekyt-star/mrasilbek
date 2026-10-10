@@ -7,6 +7,13 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Firebase (Google and Telegram sign-in) switches on when google-services.json
+// from the Firebase console is put next to this file. Without it the app runs
+// in guest mode.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 // Release signing key, kept out of git. See README.md.
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
@@ -41,6 +48,15 @@ android {
     }
 
     signingConfigs {
+        // A key only for test APKs, kept in git so every build has the same
+        // fingerprint (Google sign-in checks it). Play Store uploads use the
+        // private key from key.properties instead.
+        create("test") {
+            storeFile = file("hudud-test.keystore")
+            storePassword = "hudud-test"
+            keyAlias = "hudud-test"
+            keyPassword = "hudud-test"
+        }
         create("release") {
             keyAlias = keystoreProperties["keyAlias"] as String?
             keyPassword = keystoreProperties["keyPassword"] as String?
@@ -51,12 +67,12 @@ android {
 
     buildTypes {
         release {
-            // Without key.properties the release build falls back to the debug key,
-            // so test APKs still install; Play Store uploads need the real key.
+            // Without key.properties the release build is signed with the test
+            // key; Play Store uploads need the real key.
             signingConfig = if (keystorePropertiesFile.exists()) {
                 signingConfigs.getByName("release")
             } else {
-                signingConfigs.getByName("debug")
+                signingConfigs.getByName("test")
             }
         }
     }

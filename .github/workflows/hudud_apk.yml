@@ -41,7 +41,13 @@ jobs:
       - run: flutter analyze
       - run: flutter test
 
-      - run: flutter build apk --release --dart-define=PRO_PREVIEW=true
+      # Telegram sign-in is switched on by the repository variables
+      # HUDUD_TELEGRAM_BOT and HUDUD_AUTH_SERVER (see hudud/server/telegram-auth).
+      - run: >-
+          flutter build apk --release
+          --dart-define=PRO_PREVIEW=true
+          --dart-define=TELEGRAM_BOT=${{ vars.HUDUD_TELEGRAM_BOT }}
+          --dart-define=AUTH_SERVER=${{ vars.HUDUD_AUTH_SERVER }}
 
       - name: Rename
         run: cp build/app/outputs/flutter-apk/app-release.apk hudud.apk

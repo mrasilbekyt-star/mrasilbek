@@ -41,7 +41,7 @@ Test APK'da Pro'ni pul to'lamasdan sinab ko'rish mumkin: **Sozlamalar → Pro si
 cd hudud
 flutter pub get
 flutter run                       # telefon USB orqali ulangan bo'lsin
-flutter test                      # 35 ta test
+flutter test                      # 35 ta test (+ node --test server/telegram-auth)
 flutter build apk --release       # yoki: flutter build appbundle
 ```
 
@@ -55,6 +55,25 @@ hudud, yo'l va yuguruvchi qatlamlari ham uslub ichida. Uslubni rasmiy validator 
 flutter test tool/dump_styles_test.dart
 npx --package @maplibre/maplibre-gl-style-spec gl-style-validate build/styles/night.json
 ```
+
+## Login: Google va telefon raqam (tekin)
+
+Firebase sozlanmaguncha ilova **mehmon rejimida** ishlaydi: hamma narsa bor, ma'lumotlar telefonda.
+
+**Google orqali kirish (Firebase, tekin tarif):**
+1. https://console.firebase.google.com → **Add project** → nomi `Hudud` (Google Analytics shart emas).
+2. **Add app → Android**:
+   - Package name: `uz.mrasilbek.hudud`
+   - SHA-1 (test APK kaliti): `DD:DA:CB:7C:45:A3:D8:D6:BF:3E:89:AA:2C:3A:34:11:B9:DF:0C:01`
+   - **Register app** → `google-services.json` faylini yuklab oling.
+3. Faylni `hudud/android/app/google-services.json` ga qo'yib push qiling. Bu fayl maxfiy emas.
+4. Firebase → **Authentication → Get started → Sign-in method → Google → Enable → Save**.
+
+**Telefon raqam bilan (Telegram orqali, SMS'siz va tekin):** `server/telegram-auth/README.md`.
+
+Test APK'lar git'dagi `android/app/hudud-test.keystore` test kaliti bilan imzolanadi. Shuning uchun
+SHA-1 doim bir xil. Play Market uchun alohida maxfiy kalit (`key.properties`) ishlatiladi. Uning va
+Play App Signing'ning SHA-1'larini ham Firebase'ga qo'shish kerak.
 
 ## Pro obunasi (Google Play)
 

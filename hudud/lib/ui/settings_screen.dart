@@ -9,6 +9,7 @@ import '../l10n/strings.dart';
 import '../map/map_style.dart';
 import '../run/location.dart';
 import '../services/gpx.dart';
+import 'login_screen.dart';
 import 'paywall_screen.dart';
 import 'start_run.dart';
 import 'theme.dart';
@@ -91,6 +92,8 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ),
             ),
+          section(s.account),
+          _AccountTile(),
           section(s.language),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -259,6 +262,70 @@ class SettingsScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _AccountTile extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final app = AppScope.of(context);
+    final s = app.settings.strings;
+    final account = app.auth.account;
+    if (account == null) {
+      return ListTile(
+        leading: const CircleAvatar(backgroundColor: Palette.surfaceHigh, child: Icon(Icons.person_outline_rounded)),
+        title: Text(s.guestMode),
+        trailing: FilledButton(
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => const LoginScreen(popWhenDone: true)),
+          ),
+          child: Text(s.signIn, style: const TextStyle(color: Palette.background, fontWeight: FontWeight.w800)),
+        ),
+      );
+    }
+    return Column(
+      children: [
+        ListTile(
+          leading: CircleAvatar(
+            backgroundColor: Palette.surfaceHigh,
+            backgroundImage: account.photoUrl == null ? null : NetworkImage(account.photoUrl!),
+            child: account.photoUrl == null ? Text(account.label.characters.first.toUpperCase()) : null,
+          ),
+          title: Text(account.label, style: const TextStyle(fontWeight: FontWeight.w700)),
+          subtitle: Text(account.via == 'google' ? (account.email ?? 'Google') : (account.phone ?? 'Telegram')),
+          trailing: TextButton(onPressed: app.auth.signOut, child: Text(s.signOut)),
+        ),
+        ListTile(
+          leading: const Icon(Icons.person_remove_rounded, color: Palette.muted),
+          title: Text(s.deleteAccount, style: const TextStyle(color: Palette.muted)),
+          onTap: () async {
+            final ok = await showDialog<bool>(
+              context: context,
+              builder: (context) => AlertDialog(
+                backgroundColor: Palette.surface,
+                content: Text(s.deleteAccountConfirm),
+                actions: [
+                  TextButton(onPressed: () => Navigator.pop(context, false), child: Text(s.cancel)),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    style: TextButton.styleFrom(foregroundColor: Palette.danger),
+                    child: Text(s.yes),
+                  ),
+                ],
+              ),
+            );
+            if (ok != true) return;
+            try {
+              await app.auth.deleteAccount();
+            } catch (_) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s.reauthNeeded)));
+              }
+            }
+          },
+        ),
+      ],
     );
   }
 }

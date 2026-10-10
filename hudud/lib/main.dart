@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'app.dart';
 import 'data/settings.dart';
 import 'data/store.dart';
+import 'services/auth.dart';
 import 'services/pro.dart';
 
 Future<void> main() async {
@@ -17,5 +18,6 @@ Future<void> main() async {
   final settings = await Settings.load();
   final store = await HududStore.open();
   final pro = await ProService.start(settings);
-  runApp(HududApp(services: AppServices(settings: settings, store: store, pro: pro)));
+  final auth = await AuthService.start();
+  runApp(HududApp(services: AppServices(settings: settings, store: store, pro: pro, auth: auth)));
 }
