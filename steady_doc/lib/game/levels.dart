@@ -136,6 +136,21 @@ SceneDef _scene(String id) => switch (id) {
           workZone: const Rect.fromLTRB(220, 250, 720, 700),
           syringe: const Offset(820, 400),
         ),
+      'belly_b' => SceneDef(
+          id: id,
+          region: Region.belly,
+          skin: RRect.fromLTRBR(50, 310, 950, 1170, const Radius.circular(100)),
+          incisionStart: const Offset(495, 395),
+          incisionEnd: const Offset(500, 980),
+          workZone: const Rect.fromLTRB(310, 385, 695, 990),
+          opening: const [
+            Offset(495, 388), Offset(555, 450), Offset(610, 500), Offset(675, 545),
+            Offset(685, 790), Offset(620, 850), Offset(530, 950), Offset(500, 985),
+            Offset(470, 950), Offset(380, 850), Offset(320, 790), Offset(320, 550),
+            Offset(390, 500), Offset(440, 450),
+          ],
+          reach: 150,
+        ),
       'belly_c' => SceneDef(
           id: id,
           region: Region.belly,
@@ -176,7 +191,7 @@ SceneDef _scene(String id) => switch (id) {
           ],
           reach: 210,
         ),
-      // belly_a and belly_b: midline laparotomy, shot the same way.
+      // belly_a: a long midline laparotomy.
       _ => SceneDef(
           id: id,
           region: Region.belly,
