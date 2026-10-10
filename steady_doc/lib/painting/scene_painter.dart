@@ -6,8 +6,7 @@ import 'package:flutter/painting.dart';
 import '../game/levels.dart';
 
 /// The exposed patch of skin between the drapes.
-final RRect skinWindow =
-    RRect.fromLTRBR(240, 420, 760, 1230, const Radius.circular(56));
+final RRect skinWindow = BodyLayout.torso;
 
 /// Draws [image] over [dst], cropping it to fill without stretching.
 void drawCover(Canvas canvas, ui.Image image, Rect dst, {Paint? paint}) {
@@ -39,7 +38,7 @@ ui.Picture _record(void Function(Canvas) draw) {
   return recorder.endRecording();
 }
 
-/// Drapes, the prepped skin and the IV line, drawn in code (cached per patient).
+/// Drapes and the prepped skin, drawn in code (cached per patient).
 void paintClosedScene(Canvas canvas, LevelDef level) {
   canvas.drawPicture(_closedCache.putIfAbsent(level.number, () => _record((c) => _closed(c, level))));
 }
@@ -132,7 +131,7 @@ void _closed(Canvas c, LevelDef level) {
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 30),
     );
   }
-  // Costal margin and belly button.
+  // Costal margin.
   final crease = Paint()
     ..color = const Color(0x22000000)
     ..style = PaintingStyle.stroke
@@ -140,13 +139,11 @@ void _closed(Canvas c, LevelDef level) {
     ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
   c.drawPath(
     Path()
-      ..moveTo(270, 560)
-      ..quadraticBezierTo(400, 470, 500, 500)
-      ..quadraticBezierTo(600, 470, 730, 560),
+      ..moveTo(200, 470)
+      ..quadraticBezierTo(380, 330, 500, 360)
+      ..quadraticBezierTo(620, 330, 800, 470),
     crease,
   );
-  c.drawOval(Rect.fromCenter(center: const Offset(500, 1120), width: 26, height: 16),
-      Paint()..color = const Color(0x55301A10));
 
   // Drape edge and towel clips.
   c.drawRRect(
@@ -164,33 +161,6 @@ void _closed(Canvas c, LevelDef level) {
   ]) {
     _towelClip(c, corner);
   }
-
-  // IV line that the anesthesia goes into.
-  final tube = Path()
-    ..moveTo(BodyLayout.syringeX, BodyLayout.needleTipY)
-    ..cubicTo(BodyLayout.syringeX, 980, 80, 1000, -10, 1180);
-  c.drawPath(
-    tube,
-    Paint()
-      ..color = const Color(0x55000000)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 16
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
-  );
-  c.drawPath(
-    tube,
-    Paint()
-      ..color = const Color(0xCCE8F1F5)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 10,
-  );
-  c.drawRRect(
-    RRect.fromRectAndRadius(
-        Rect.fromCenter(center: const Offset(BodyLayout.syringeX, BodyLayout.needleTipY + 8),
-            width: 34, height: 40),
-        const Radius.circular(8)),
-    Paint()..color = const Color(0xFFF2F5F7),
-  );
 
   // Steel kidney dish for the findings.
   _kidneyDish(c, BodyLayout.tray);

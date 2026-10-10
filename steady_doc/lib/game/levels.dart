@@ -10,30 +10,30 @@ import 'geometry.dart';
 abstract final class BodyLayout {
   static const Size design = Size(1000, 1400);
 
-  static const Offset headCenter = Offset(500, 240);
-  static const double headRadius = 130;
-
+  /// Exposed skin between the drapes. The scene pictures in assets/art/ are
+  /// 3:4 portrait, drawn over the whole canvas (25 units cropped at each side),
+  /// and these coordinates are measured on them.
   static final RRect torso =
-      RRect.fromLTRBR(250, 390, 750, 1260, const Radius.circular(170));
-  static const Rect leftArm = Rect.fromLTRB(128, 420, 238, 1080);
-  static const Rect rightArm = Rect.fromLTRB(762, 420, 872, 1080);
+      RRect.fromLTRBR(160, 180, 840, 1240, const Radius.circular(140));
 
-  /// Where swallowed objects can sit.
-  static const Rect workZone = Rect.fromLTRB(300, 480, 700, 1170);
+  /// Where swallowed objects can sit: inside the opened abdomen.
+  static const Rect workZone = Rect.fromLTRB(250, 300, 750, 1130);
 
   /// Corridors may bend slightly outside [workZone] but never leave the torso.
-  static const Rect corridorZone = Rect.fromLTRB(290, 460, 710, 1190);
+  static const Rect corridorZone = Rect.fromLTRB(220, 250, 780, 1160);
 
-  static const double incisionTop = 590;
-  static const double incisionBottom = 1070;
+  /// The midline incision, where the staples are in scene_done.
+  static const double incisionTop = 340;
+  static const double incisionBottom = 1170;
 
-  /// Syringe on the left arm: the plunger handle travels from start to end.
-  static const double syringeX = 183;
+  /// Syringe for local anesthesia, left of the incision: the plunger handle
+  /// travels from start to end.
+  static const double syringeX = 330;
   static const double plungerStart = 440;
   static const double plungerEnd = 720;
   static const double needleTipY = 850;
 
-  /// Where extracted objects are collected.
+  /// Steel dish where extracted objects are collected (on the drapes).
   static const Rect tray = Rect.fromLTRB(790, 1170, 990, 1390);
 }
 
@@ -100,10 +100,10 @@ class LevelDef {
       : difficulty < 0.7
           ? 2
           : 3;
-  double get cutAmplitude => mix(12, 55, difficulty);
+  double get cutAmplitude => mix(6, 30, difficulty);
   double get cutTolerance => mix(58, 32, difficulty);
 
-  int get stitchCount => 4 + (difficulty * 4).round();
+  int get stitchCount => 7 + (difficulty * 5).round();
   double get stitchHitRadius => mix(44, 28, difficulty);
   double get stitchTolerance => mix(78, 46, difficulty);
 
@@ -204,8 +204,8 @@ class LevelLayout {
       Offset candidate = Offset.zero;
       for (var attempt = 0; attempt < 300 && chosen == null; attempt++) {
         candidate = Offset(
-          left ? between(320, 420) : between(580, 680),
-          between(510, 1150),
+          left ? between(275, 420) : between(580, 725),
+          between(330, 1100),
         );
         final farFromExit = (candidate - exit).distance >= level.minExitDistance;
         final farFromOthers =

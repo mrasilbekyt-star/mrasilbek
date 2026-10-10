@@ -85,20 +85,21 @@ U yerda raqobat kamroq va S Pen o'yinlari ko'proq ko'rinadi.
 
 ## Real grafika (`assets/art/`)
 
-O'yin sahnasi hozircha kod bilan chiziladi. `assets/art/` papkasiga quyidagi PNG fayllarni qo'ysangiz,
-o'yin ularni avtomatik ishlata boshlaydi. Qaysi fayl bo'lmasa, o'rniga chizilgan grafika chiqadi.
+O'yin `assets/art/` papkasidagi rasmlarni (JPG yoki PNG) avtomatik ishlatadi. Qaysi fayl bo'lmasa,
+o'rniga kod bilan chizilgan grafika chiqadi.
 
-| Fayl | Nima |
-|---|---|
-| `scene_closed.png` | Bemor tepadan, qorin ochiq, qolgan joy yashil mato bilan yopilgan |
-| `scene_open.png` | Xuddi shu kadr, qorin ochilgan (organlar ko'rinadi) |
-| `scene_xray.png` | Xuddi shu kadrning rentgen surati |
-| `tool_forceps.png` | Pinset (foni shaffof, uchi pastda) |
-| `obj_<nom>.png` | Chiqariladigan narsa, masalan `obj_coin.png`. Nomlar: `lib/game/levels.dart` → `findingEmoji` |
+| Fayl | Nima | Holati |
+|---|---|---|
+| `scene_closed` | Bemor tepadan, qorin yopiq, yod surtilgan | ✅ bor |
+| `scene_open` | Xuddi shu kadr, qorin ochilgan, organlar ko'rinadi | ✅ bor |
+| `scene_xray` | Xuddi shu kadrning rentgen surati | ✅ bor |
+| `scene_done` | Operatsiyadan keyin, kesik tikilgan (g'alaba ekrani orqasida) | ✅ bor |
+| `tool_forceps` | Pinset, foni shaffof, uchi pastda | ⏳ kerak |
+| `obj_<nom>` | Chiqariladigan narsa, foni shaffof, masalan `obj_coin.png`. Nomlar: `lib/game/levels.dart` → `findingEmoji` | ⏳ kerak (hozircha emoji) |
 
-Sahna rasmlari tik (3:4) bo'lishi kerak. Ular 1000 × 1400 maydonni to'liq qoplaydi.
-Rasm qo'yilgandan keyin kesik, yo'lak va chiqish nuqtalarining joyini rasmga moslash kerak bo'ladi
-(`lib/game/levels.dart` → `BodyLayout`).
+Sahna rasmlari tik (3:4) va bir xil kadrda bo'lishi kerak. Ular 1000 × 1400 maydonni to'liq qoplaydi.
+Kesik, yo'laklar va chiqish nuqtasi shu rasmlarga moslangan (`lib/game/levels.dart` → `BodyLayout`).
+Sahnani boshqa rasmga almashtirsangiz, bu koordinatalarni ham yangilash kerak.
 
 ## Loyiha tuzilishi
 

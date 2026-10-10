@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:steady_doc/game/session.dart';
@@ -77,5 +78,17 @@ void main() {
     await tester.pump();
     expect(find.text('Настройки'), findsOneWidget);
     expect(state.language, 'ru');
+  });
+
+  testWidgets('the operating room pictures ship with the app', (tester) async {
+    final art = (await tester.runAsync(() => ArtAssets.load(rootBundle)))!;
+    expect(art.sceneClosed, isNotNull);
+    expect(art.sceneOpen, isNotNull);
+    expect(art.sceneXray, isNotNull);
+    expect(art.sceneDone, isNotNull);
+    // Scene pictures are 3:4 portrait, as the layout expects.
+    for (final image in [art.sceneClosed!, art.sceneOpen!, art.sceneXray!, art.sceneDone!]) {
+      expect(image.width / image.height, closeTo(0.75, 0.01));
+    }
   });
 }

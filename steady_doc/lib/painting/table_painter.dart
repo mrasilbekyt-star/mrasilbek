@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:flutter/rendering.dart';
 
@@ -52,37 +53,51 @@ class TablePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final fit = DesignFit(size);
-    canvas.drawRect(Offset.zero & size, Paint()..color = const Color(0xFF0B1714));
+    // Keep the blurred backdrop and floating text inside the table area.
+    canvas.clipRect(Offset.zero & size);
+    final stage = session.stage;
+    // After a successful operation, show the closed wound from the photo.
+    final healed = session.state == SessionState.won ? art.sceneDone : null;
+    _paintBackdrop(canvas, size,
+        healed ?? (stage is ExtractStage ? art.sceneOpen : null) ?? art.sceneClosed);
+
     canvas.save();
     canvas.translate(fit.offset.dx, fit.offset.dy);
     canvas.scale(fit.scale);
     canvas.clipRect(_full);
 
-    final stage = session.stage;
-    _paintScene(canvas, opened: stage is ExtractStage);
+    if (healed != null) {
+      drawCover(canvas, healed, _full);
+    } else {
+      _paintScene(canvas, opened: stage is ExtractStage);
+    }
     _paintTrayContents(canvas);
 
     final inject = session.stages.whereType<InjectStage>().firstOrNull;
     if (inject != null && stage is InjectStage) _paintSyringe(canvas, inject);
 
-    if (session.cutDone && stage is! ExtractStage) {
+    if (healed == null && session.cutDone && stage is! ExtractStage) {
       _paintIncision(canvas, session.layout.cut.points, healed: session.stitchDone);
     }
-    if (session.stitchDone) _paintSutures(canvas, session.layout.stitchTargets);
+    if (healed == null && session.stitchDone) {
+      _paintSutures(canvas, session.layout.stitchTargets);
+    }
 
-    switch (stage) {
-      case XrayStage():
-        _paintSkinMarks(canvas, stage.items);
-        _paintXray(canvas, stage);
-      case CutStage():
-        _paintSkinMarks(canvas, session.stages.whereType<XrayStage>().first.items);
-        _paintCut(canvas, stage);
-      case ExtractStage():
-        _paintExtraction(canvas, stage);
-      case StitchStage():
-        _paintStitching(canvas, stage);
-      case InjectStage():
-        break;
+    if (healed == null) {
+      switch (stage) {
+        case XrayStage():
+          _paintSkinMarks(canvas, stage.items);
+          _paintXray(canvas, stage);
+        case CutStage():
+          _paintSkinMarks(canvas, session.stages.whereType<XrayStage>().first.items);
+          _paintCut(canvas, stage);
+        case ExtractStage():
+          _paintExtraction(canvas, stage);
+        case StitchStage():
+          _paintStitching(canvas, stage);
+        case InjectStage():
+          break;
+      }
     }
 
     _paintHoverAim(canvas);
@@ -92,6 +107,23 @@ class TablePainter extends CustomPainter {
   }
 
   // ----------------------------------------------------------------- scene
+
+  /// Fills the screen around the table with a blurred, darkened copy of the
+  /// scene, so wide or tall screens show no empty bands.
+  void _paintBackdrop(Canvas canvas, Size size, ui.Image? scene) {
+    final screen = Offset.zero & size;
+    if (scene == null) {
+      canvas.drawRect(screen, Paint()..color = const Color(0xFF0B1714));
+      return;
+    }
+    canvas.saveLayer(
+      screen,
+      Paint()..imageFilter = ui.ImageFilter.blur(sigmaX: 22, sigmaY: 22, tileMode: TileMode.clamp),
+    );
+    drawCover(canvas, scene, screen.inflate(40));
+    canvas.restore();
+    canvas.drawRect(screen, Paint()..color = const Color(0xA6050A09));
+  }
 
   void _paintScene(Canvas canvas, {required bool opened}) {
     final closed = art.sceneClosed;
@@ -505,16 +537,27 @@ class TablePainter extends CustomPainter {
   // --------------------------------------------------------------- extract
 
   void _paintExtraction(Canvas canvas, ExtractStage stage) {
-    // Channels between the organs that the objects can slide through.
+    // Safe channels between the organs, drawn as a light guidance overlay so
+    // the tissue underneath stays visible.
     final hasPhoto = art.sceneOpen != null;
-    for (final item in stage.items) {
-      if (item.extracted) continue;
-      final path = _pathOf(item.corridor.points);
-      canvas.drawPath(path, _stroke(Color.fromRGBO(255, 214, 205, hasPhoto ? 0.35 : 0.55), stage.width + 10));
-      canvas.drawPath(path, _stroke(Color.fromRGBO(40, 6, 10, hasPhoto ? 0.55 : 0.9), stage.width));
-      canvas.drawPath(path,
-          _stroke(const Color(0x22FFFFFF), stage.width * 0.3, blur: 6));
+    final paths = [
+      for (final item in stage.items)
+        if (!item.extracted) _pathOf(item.corridor.points),
+    ];
+    canvas.saveLayer(_full, Paint()..color = Color.fromRGBO(0, 0, 0, hasPhoto ? 0.32 : 0.85));
+    for (final path in paths) {
+      canvas.drawPath(path, _stroke(const Color(0xFF16040A), stage.width));
     }
+    canvas.restore();
+    canvas.saveLayer(_full, Paint()..color = const Color.fromRGBO(0, 0, 0, 0.8));
+    for (final path in paths) {
+      canvas.drawPath(path, _stroke(const Color(0xFF8FF5D0), stage.width + 5));
+    }
+    for (final path in paths) {
+      canvas.drawPath(path, _stroke(const Color(0xFF000000), stage.width)..blendMode = BlendMode.clear);
+    }
+    canvas.restore();
+
     // Opening to pull objects out through.
     canvas.drawCircle(stage.exit, ExtractStage.exitRadius + 6, Paint()..color = const Color(0xFF14030A));
     _dashedCircle(canvas, stage.exit, ExtractStage.exitRadius + 14 + 3 * math.sin(_t * 4),
