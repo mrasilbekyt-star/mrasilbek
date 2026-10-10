@@ -152,6 +152,21 @@ List<Offset> catmullRom(List<Offset> ctrl, {int samplesPerSegment = 12}) {
   return out;
 }
 
+/// Whether [p] is inside the closed [polygon] and at least [margin] from its edges.
+bool insidePolygon(List<Offset> polygon, Offset p, {double margin = 0}) {
+  var inside = false;
+  for (var i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    final a = polygon[i];
+    final b = polygon[j];
+    if ((a.dy > p.dy) != (b.dy > p.dy) &&
+        p.dx < (b.dx - a.dx) * (p.dy - a.dy) / (b.dy - a.dy) + a.dx) {
+      inside = !inside;
+    }
+    if (distanceToSegment(p, a, b) < margin) return false;
+  }
+  return inside;
+}
+
 Offset clampToRect(Offset p, Rect r) =>
     Offset(p.dx.clamp(r.left, r.right), p.dy.clamp(r.top, r.bottom));
 

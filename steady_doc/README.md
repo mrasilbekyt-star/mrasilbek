@@ -90,21 +90,20 @@ Har bir bemor alohida odam, o'z kasalligi va o'z sahnasi bilan (`lib/game/levels
 | # | Bemor | Tashxis | Sahna (`assets/art/<sahna>_*`) | Rasmlar |
 |---|---|---|---|---|
 | 1 | Erkak, 24 | Yutib yuborilgan tanga | `belly_a` (qorin) | ✅ |
-| 2 | Erkak, 45 | Kaftga kirgan qarmoq | `hand_a` (kaft) | ✅ (rentgen 🔁) |
+| 2 | Erkak, 45 | Kaftga kirgan qarmoq | `hand_a` (kaft) | ✅ |
 | 3 | Ayol, 19 | O'tkir appenditsit | `appendix_a` (qorinning o'ng pasti) | ✅ |
 | 4 | Erkak, 28 | Qorin devoridagi shisha parchalari | `torso_a` (tana) | ✅ |
 | 5 | Ayol, 31 | Uzuk va to'g'nag'ich | `belly_b` (qorin) | 🔁 |
 | 6 | Erkak, 54 | O't tosh kasalligi | `gall_a` (qovurg'a osti) | ✅ |
-| 7 | Ayol, 36 | Tizzadagi suyak parchalari | `knee_a` (tizza) | ✅ (yopiq 🔁) |
+| 7 | Ayol, 36 | Tizzadagi suyak parchalari | `knee_a` (tizza) | ✅ |
 | 8 | Erkak, 63 | Buyrak toshlari | `flank_a` (biqin) | ✅ |
-| 9 | Erkak, 19 | Batareya, magnit, soqqa | `belly_c` (qorin) | 🔁 |
-| 10 | Erkak, 41 | Yelkadagi metall parchalari | `shoulder_a` (yelka) | ✅ (yopiq, rentgen 🔁) |
-| 11 | Ayol, 70 | Tish protezi va qoshiq | `belly_d` (qorin) | 🔁 |
-| 12 | Erkak, 49 | Kalit, bolt, tish cho'tkasi | `belly_e` (qorin) | 🔁 |
+| 9 | Erkak, 19 | Batareya, magnit, soqqa | `belly_c` (qorin) | ✅ |
+| 10 | Erkak, 41 | Yelkadagi metall parchalari | `shoulder_a` (yelka) | ✅ |
+| 11 | Ayol, 70 | Tish protezi va qoshiq | `belly_d` (qorin) | ✅ |
+| 12 | Erkak, 49 | Kalit, bolt, tish cho'tkasi | `belly_e` (qorin) | ✅ |
 
-🔁 — rasm bor, lekin qayta yasash kerak: `belly_b`–`belly_e` ochiq rasmlari `belly_a`'ning nusxasi bo'lib
-chiqqan, `hand_a` va `shoulder_a` rentgeni haqiqiy rentgen emas, `knee_a` va `shoulder_a` yopiq rasmi
-plastmassaga o'xshaydi.
+🔁 — rasm bor, lekin qayta yasash kerak: `belly_b` ochiq rasmi `belly_a`'ning nusxasi, yopiq rasmida
+ko'krak ochiq qolgan (`python3 tool/gen_scenes.py --redo belly_b`).
 
 ## Real grafika (`assets/art/`)
 

@@ -26,8 +26,9 @@ ART = os.path.join(HERE, '..', 'assets', 'art')
 STYLE = ('The attached picture is only a reference for render quality, lighting and the top-down '
          'camera. Make a NEW patient and a NEW operation: do not copy its organs, wound outline, '
          'retractors or drapes. Camera directly above, portrait 3:4. Sterile drapes cover everything '
-         'except the operating field in the center of the frame. Steel retractors hold the wound '
-         'edges apart. Super realistic, like a real photograph from a real operating room: real '
+         'except the operating field in the center of the frame; they always cover the chest and '
+         'the groin. Steel retractors hold the wound edges apart. Super realistic, like a real '
+         'photograph from a real operating room: real '
          'human skin with pores, fine hair, freckles and natural imperfections, glossy wet tissue, '
          'real blood vessels, razor sharp, 8K. Not a cartoon, not an illustration. No foreign '
          'objects, no surgeons hands, no text.')
@@ -59,9 +60,10 @@ PATIENTS = {
     },
     'belly_b': {
         'open': 'Hyper-realistic surgical photograph of the abdomen of a woman in her thirties with '
-                'medium brown skin and a small tattoo near the hip, blue drapes. A short upper '
-                'midline incision; the pale pink stomach fills most of the wound, the left lobe of '
-                'the liver at the top, a little omentum below.',
+                'medium brown skin and a few freckles; blue drapes cover her chest and everything '
+                'above the lower ribs. A short upper midline incision; the pale pink stomach fills '
+                'most of the wound, the left lobe of the liver at the top, a little omentum below.',
+        'closed': 'The blue drapes still cover her chest; only the abdomen is visible.',
     },
     'gall_a': {
         'open': 'Hyper-realistic surgical photograph of the upper abdomen of an overweight pale man '

@@ -45,4 +45,12 @@ void main() {
     expect(curve.last, ctrl.last);
     expect(curve.any((p) => (p - ctrl[1]).distance < 1e-9), isTrue);
   });
+
+  test('insidePolygon respects the outline and the margin', () {
+    const diamond = [Offset(0, -100), Offset(100, 0), Offset(0, 100), Offset(-100, 0)];
+    expect(insidePolygon(diamond, Offset.zero), isTrue);
+    expect(insidePolygon(diamond, const Offset(80, 80)), isFalse);
+    expect(insidePolygon(diamond, const Offset(45, 45)), isTrue);
+    expect(insidePolygon(diamond, const Offset(45, 45), margin: 20), isFalse);
+  });
 }

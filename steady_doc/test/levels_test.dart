@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:steady_doc/game/geometry.dart';
 import 'package:steady_doc/game/levels.dart';
 
 void main() {
@@ -45,6 +46,10 @@ void main() {
         for (var i = 0; i < layout.items.length; i++) {
           final p = layout.items[i];
           expect(level.scene.workZone.contains(p), isTrue, reason: 'item $i at $p');
+          final opening = level.scene.opening;
+          if (opening != null) {
+            expect(insidePolygon(opening, p, margin: 30), isTrue, reason: 'item $i in the wound');
+          }
           expect((p - layout.exit).distance, greaterThanOrEqualTo(level.minExitDistance));
           for (var j = 0; j < i; j++) {
             expect((p - layout.items[j]).distance, greaterThanOrEqualTo(150));

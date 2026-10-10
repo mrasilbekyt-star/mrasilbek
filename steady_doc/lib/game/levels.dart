@@ -36,6 +36,8 @@ class SceneDef {
     required this.workZone,
     this.syringe = const Offset(330, 440),
     this.itemSide = 0,
+    this.opening,
+    this.reach,
   });
 
   final String id;
@@ -57,6 +59,14 @@ class SceneDef {
   /// Side of the incision the findings sit on: 0 alternates between both
   /// sides, -1 or 1 keeps them on the one side where the organ is.
   final double itemSide;
+
+  /// Outline of the opened wound when it is not a plain box; the findings
+  /// stay inside it.
+  final List<Offset>? opening;
+
+  /// Farthest the findings can sit from the middle of the incision in a
+  /// narrow wound; caps [LevelDef.minExitDistance].
+  final double? reach;
 
   /// Corridors may bend slightly outside [workZone].
   Rect get corridorZone => workZone.inflate(30);
@@ -126,7 +136,47 @@ SceneDef _scene(String id) => switch (id) {
           workZone: const Rect.fromLTRB(220, 250, 720, 700),
           syringe: const Offset(820, 400),
         ),
-      // belly_a..belly_e: midline laparotomy, all shot the same way.
+      'belly_c' => SceneDef(
+          id: id,
+          region: Region.belly,
+          skin: RRect.fromLTRBR(90, 210, 900, 1220, const Radius.circular(120)),
+          incisionStart: const Offset(477, 310),
+          incisionEnd: const Offset(482, 1040),
+          workZone: const Rect.fromLTRB(290, 310, 690, 1045),
+          opening: const [Offset(477, 305), Offset(690, 672), Offset(482, 1048), Offset(288, 670)],
+          reach: 120,
+        ),
+      'belly_d' => SceneDef(
+          id: id,
+          region: Region.belly,
+          skin: RRect.fromLTRBR(70, 100, 940, 1140, const Radius.circular(120)),
+          incisionStart: const Offset(210, 730),
+          incisionEnd: const Offset(800, 730),
+          workZone: const Rect.fromLTRB(200, 610, 805, 1010),
+          itemSide: 1,
+          opening: const [
+            Offset(195, 690), Offset(340, 635), Offset(480, 612), Offset(640, 628),
+            Offset(800, 680), Offset(805, 735), Offset(700, 850), Offset(495, 1010),
+            Offset(380, 920), Offset(220, 790), Offset(198, 745),
+          ],
+          reach: 160,
+        ),
+      'belly_e' => SceneDef(
+          id: id,
+          region: Region.belly,
+          skin: RRect.fromLTRBR(90, 70, 920, 1250, const Radius.circular(140)),
+          incisionStart: const Offset(485, 345),
+          incisionEnd: const Offset(490, 1030),
+          workZone: const Rect.fromLTRB(255, 345, 710, 1030),
+          opening: const [
+            Offset(420, 350), Offset(560, 350), Offset(640, 410), Offset(690, 520),
+            Offset(705, 650), Offset(690, 800), Offset(650, 900), Offset(570, 990),
+            Offset(490, 1030), Offset(410, 990), Offset(320, 900), Offset(270, 800),
+            Offset(255, 650), Offset(270, 520), Offset(330, 410),
+          ],
+          reach: 210,
+        ),
+      // belly_a and belly_b: midline laparotomy, shot the same way.
       _ => SceneDef(
           id: id,
           region: Region.belly,
@@ -220,7 +270,7 @@ class LevelDef {
 
   /// How far the findings sit from the opening, shortened for small fields.
   double get minExitDistance =>
-      math.min(mix(130, 270, difficulty), scene.workZone.shortestSide * 0.6);
+      math.min(mix(130, 270, difficulty), scene.reach ?? scene.workZone.shortestSide * 0.6);
 
   int get cutWaves => difficulty < 0.3
       ? 1
@@ -333,13 +383,15 @@ class LevelLayout {
       final wantSide = scene.itemSide != 0 ? scene.itemSide : (i.isEven ? -1.0 : 1.0);
       Offset? chosen;
       Offset candidate = zone.center;
-      for (var attempt = 0; attempt < 600 && chosen == null; attempt++) {
+      for (var attempt = 0; attempt < 2000 && chosen == null; attempt++) {
         candidate = Offset(between(zone.left + 25, zone.right - 25),
             between(zone.top + 25, zone.bottom - 25));
+        final inWound = scene.opening == null ||
+            insidePolygon(scene.opening!, candidate, margin: 30);
         final offCut = side(candidate) * wantSide >= 75;
         final farFromExit = (candidate - exit).distance >= level.minExitDistance;
         final farFromOthers = items.every((q) => (candidate - q).distance >= 150);
-        if (offCut && farFromExit && farFromOthers) chosen = candidate;
+        if (inWound && offCut && farFromExit && farFromOthers) chosen = candidate;
       }
       items.add(chosen ?? candidate);
     }
