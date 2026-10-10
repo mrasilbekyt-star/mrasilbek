@@ -2,6 +2,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:steady_doc/game/levels.dart';
 
 void main() {
+  test('every finding has a fallback emoji', () {
+    for (final level in levels) {
+      for (final id in level.items) {
+        expect(findingEmoji, contains(id));
+      }
+    }
+  });
+
   test('there are 12 patients with rising difficulty', () {
     expect(levels, hasLength(12));
     expect(levels.first.difficulty, 0);
@@ -14,7 +22,7 @@ void main() {
   });
 
   for (final level in levels) {
-    group('patient ${level.number} (${level.patient})', () {
+    group('patient ${level.number}', () {
       final layout = LevelLayout.generate(level);
 
       test('is generated the same way every time', () {

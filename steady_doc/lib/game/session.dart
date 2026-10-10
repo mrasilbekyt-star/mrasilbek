@@ -90,6 +90,16 @@ class GameSession extends ChangeNotifier implements StageHost {
   double get stress =>
       ((bpm - restingBpm) / (faintBpm - restingBpm)).clamp(0.0, 1.0);
 
+  /// Blood oxygen, in percent: falls as the patient panics.
+  int get spo2 => (99 - stress * 11).round();
+
+  /// Blood pressure, in mmHg: rises as the patient panics.
+  int get systolic => (118 + stress * 52 + 2 * math.sin(_now * 0.7)).round();
+  int get diastolic => (76 + stress * 28 + math.sin(_now * 0.9)).round();
+
+  /// The monitor sounds its alarm close to fainting.
+  bool get alarm => stress >= 0.7;
+
   int get stars => mistakes <= 1
       ? 3
       : mistakes <= 4
@@ -177,7 +187,7 @@ class GameSession extends ChangeNotifier implements StageHost {
       }
     }
     _beat += dt * bpm / 60;
-    ecg[ecgHead] = _ecgWave(_beat % 1);
+    ecg[ecgHead] = ecgWave(_beat % 1);
     ecgHead = (ecgHead + 1) % ecgSamples;
 
     if (hoverPos != null && _now - _hoverAt > 0.25) hoverPos = null;
@@ -194,7 +204,7 @@ class GameSession extends ChangeNotifier implements StageHost {
   }
 
   /// One heartbeat on the monitor, 0..1 through the beat.
-  static double _ecgWave(double p) {
+  static double ecgWave(double p) {
     double bump(double center, double width, double height) {
       final x = (p - center) / width;
       return height * math.exp(-x * x);

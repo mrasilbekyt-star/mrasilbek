@@ -37,24 +37,41 @@ abstract final class BodyLayout {
   static const Rect tray = Rect.fromLTRB(790, 1170, 990, 1390);
 }
 
-enum HairStyle { short, long, bald, bun, spiky }
+enum Sex { male, female }
+
+/// Emoji used to draw each finding until a photo for it is added to assets/art/.
+const findingEmoji = {
+  'coin': '🪙',
+  'ring': '💍',
+  'key': '🔑',
+  'denture': '🦷',
+  'battery': '🔋',
+  'magnet': '🧲',
+  'gallstone': '🪨',
+  'bolt': '🔩',
+  'pin': '🧷',
+  'dice': '🎲',
+  'pawn': '♟️',
+  'spoon': '🥄',
+  'toothbrush': '🪥',
+};
 
 class LevelDef {
   const LevelDef({
     required this.number,
-    required this.patient,
+    required this.sex,
+    required this.age,
     required this.items,
     required this.injection,
     required this.difficulty,
     required this.skin,
-    required this.hair,
-    required this.hairStyle,
   });
 
   final int number;
-  final String patient;
+  final Sex sex;
+  final int age;
 
-  /// Emoji of the objects the patient swallowed.
+  /// What has to come out, as keys of [findingEmoji].
   final List<String> items;
 
   /// Whether the level starts with an anesthesia injection.
@@ -64,8 +81,6 @@ class LevelDef {
   final double difficulty;
 
   final Color skin;
-  final Color hair;
-  final HairStyle hairStyle;
 
   int get seed => number * 7919 + 17;
 
@@ -99,41 +114,40 @@ class LevelDef {
 }
 
 const _skins = [
-  Color(0xFFF2C9A0),
-  Color(0xFFE0AC69),
-  Color(0xFFC68642),
-  Color(0xFFF7D7C4),
-  Color(0xFF8D5524),
+  Color(0xFFE3B694),
+  Color(0xFFD29E78),
+  Color(0xFFB98260),
+  Color(0xFFEBC3A6),
+  Color(0xFF9A6646),
 ];
 
 final List<LevelDef> levels = _buildLevels();
 
 List<LevelDef> _buildLevels() {
-  const specs = <(String, List<String>, HairStyle, Color)>[
-    ('Bobur', ['🚗'], HairStyle.short, Color(0xFF2B2B2B)),
-    ('Lola', ['🐟'], HairStyle.long, Color(0xFF6B3E26)),
-    ('Timur', ['🔑', '🪙'], HairStyle.spiky, Color(0xFF3B2A20)),
-    ('Zara buvi', ['🦆'], HairStyle.bun, Color(0xFFBDBDBD)),
-    ('Mr. Pickles', ['📱', '🔋'], HairStyle.bald, Color(0xFF000000)),
-    ('Ozod', ['🎲', '🧦'], HairStyle.short, Color(0xFF4A3426)),
-    ('Nilufar', ['🍌', '🍓'], HairStyle.long, Color(0xFF1E1E1E)),
-    ('Kapitan Bek', ['⚓', '🦀'], HairStyle.spiky, Color(0xFFB5531F)),
-    ('Sardor', ['🎮', '🔦'], HairStyle.short, Color(0xFF2E2016)),
-    ('Malika', ['💍', '💎', '🪙'], HairStyle.bun, Color(0xFF5A2E1A)),
-    ('Jasur', ['🧲', '🔩', '⚙️'], HairStyle.spiky, Color(0xFF151515)),
-    ('Big Boss', ['🍔', '🍟', '🌭'], HairStyle.bald, Color(0xFF000000)),
+  const cases = <(Sex, int, List<String>)>[
+    (Sex.male, 24, ['coin']),
+    (Sex.female, 31, ['ring']),
+    (Sex.male, 45, ['key', 'coin']),
+    (Sex.female, 67, ['denture']),
+    (Sex.male, 19, ['battery', 'magnet']),
+    (Sex.female, 52, ['gallstone', 'gallstone']),
+    (Sex.male, 38, ['bolt', 'pin']),
+    (Sex.female, 27, ['pin', 'ring']),
+    (Sex.male, 33, ['dice', 'pawn']),
+    (Sex.male, 58, ['spoon', 'toothbrush']),
+    (Sex.female, 41, ['magnet', 'magnet', 'battery']),
+    (Sex.male, 49, ['key', 'bolt', 'coin']),
   ];
   return [
-    for (var i = 0; i < specs.length; i++)
+    for (var i = 0; i < cases.length; i++)
       LevelDef(
         number: i + 1,
-        patient: specs[i].$1,
-        items: specs[i].$2,
+        sex: cases[i].$1,
+        age: cases[i].$2,
+        items: cases[i].$3,
         injection: i > 0,
-        difficulty: i / (specs.length - 1),
+        difficulty: i / (cases.length - 1),
         skin: _skins[i % _skins.length],
-        hair: specs[i].$4,
-        hairStyle: specs[i].$3,
       ),
   ];
 }

@@ -1,14 +1,15 @@
-# 🩺 Steady Doc — S Pen uchun operatsiya o'yini
+# 🩺 Steady Doc — S Pen uchun jarrohlik simulyatori
 
-Bemorlar g'alati narsalarni yutib yuborgan: o'yinchoq mashina, baliq, kalit, burger va hokazo.
-O'yinchi ularni operatsiya qilib chiqarib oladi. O'yin Samsung **S Pen** uchun moslangan,
-lekin barmoq bilan ham bemalol o'ynaladi.
+Kattalar uchun real jarrohlik o'yini. Bemorlar tanga, batareya, magnit, tish protezi kabi narsalarni
+yutib yuborgan yoki o'tida tosh paydo bo'lgan; o'yinchi jarroh sifatida ularni operatsiya qiladi.
+O'yin Samsung **S Pen** uchun moslangan, lekin barmoq bilan ham bemalol o'ynaladi.
 
 ## O'yinda nimalar bor
 
 - **12 ta bemor**, har biri oldingisidan qiyinroq.
 - **5 bosqich:** 💉 ukol → 🩻 rentgen → 🔪 kesish → 🥢 chiqarish → 🧵 tikish.
-- **Yurak monitori:** har bir xato yurak urishini tezlashtiradi. 170 BPM ga yetsa, bemor hushidan ketadi.
+- **Bemor monitori:** EKG, yurak urishi, SpO2 va qon bosimi. Har bir xato bemor stressini oshiradi,
+  monitor "XAVF" signalini beradi. Yurak urishi 170 ga yetsa, bemor hushidan ketadi.
 - **Yulduzlar:** 0–1 xato bo'lsa 3 ta, 2–4 xato bo'lsa 2 ta, undan ko'p bo'lsa 1 ta yulduz.
   Keyingi bemor oldingisi davolangandan keyin ochiladi.
 - **S Pen imkoniyatlari:**
@@ -74,21 +75,37 @@ Tayyor fayl: `build/app/outputs/bundle/release/app-release.aab`.
    joylang (masalan GitHub Pages yoki Spoortza sayti). Havolasini Play Console'ga qo'ying.
 4. **Data safety:** o'yin hech qanday ma'lumot yig'maydi va internetga ulanmaydi, shuning uchun
    "No data collected" deb belgilang.
-5. **Target audience:** 13+ ni tanlang. Bolalar uchun deb belgilasangiz, Google'ning qattiqroq
-   qoidalari qo'llanadi.
-6. **Content rating:** savollarga halol javob bering.
+5. **Target audience:** 18+ yoki 16+ ni tanlang (o'yin kattalar uchun).
+6. **Content rating:** jarrohlik va qon tasvirlari borligini halol belgilang (taxminan 16+ chiqadi).
 7. Shaxsiy dasturchi akkaunti bo'lsa, Google avval **yopiq test** talab qiladi:
    kamida 12 tester, 14 kun. Spoortza'da bu jarayondan o'tgansiz.
 
 **Galaxy Store** (ixtiyoriy): seller.samsungapps.com orqali o'sha AAB faylni yuklasa bo'ladi.
 U yerda raqobat kamroq va S Pen o'yinlari ko'proq ko'rinadi.
 
+## Real grafika (`assets/art/`)
+
+O'yin sahnasi hozircha kod bilan chiziladi. `assets/art/` papkasiga quyidagi PNG fayllarni qo'ysangiz,
+o'yin ularni avtomatik ishlata boshlaydi. Qaysi fayl bo'lmasa, o'rniga chizilgan grafika chiqadi.
+
+| Fayl | Nima |
+|---|---|
+| `scene_closed.png` | Bemor tepadan, qorin ochiq, qolgan joy yashil mato bilan yopilgan |
+| `scene_open.png` | Xuddi shu kadr, qorin ochilgan (organlar ko'rinadi) |
+| `scene_xray.png` | Xuddi shu kadrning rentgen surati |
+| `tool_forceps.png` | Pinset (foni shaffof, uchi pastda) |
+| `obj_<nom>.png` | Chiqariladigan narsa, masalan `obj_coin.png`. Nomlar: `lib/game/levels.dart` → `findingEmoji` |
+
+Sahna rasmlari tik (3:4) bo'lishi kerak. Ular 1000 × 1400 maydonni to'liq qoplaydi.
+Rasm qo'yilgandan keyin kesik, yo'lak va chiqish nuqtalarining joyini rasmga moslash kerak bo'ladi
+(`lib/game/levels.dart` → `BodyLayout`).
+
 ## Loyiha tuzilishi
 
 | Papka | Nima bor |
 |---|---|
 | `lib/game/` | O'yin mantiqi: darajalar, bosqichlar, yurak urishi. Ekrandan mustaqil, testlar shu yerni tekshiradi |
-| `lib/painting/` | Grafika: bemor, rentgen, shprits, yo'laklar, choklar (hammasi kod bilan chiziladi) |
+| `lib/painting/` | Grafika: sahna, rentgen, shprits, skalpel, pinset, choklar; `art.dart` real rasmlarni yuklaydi |
 | `lib/ui/` | Ekranlar: bosh menyu, bemorlar ro'yxati, o'yin, sozlamalar |
 | `lib/l10n/strings.dart` | Barcha matnlar 3 tilda |
 | `assets/sfx/` | Ovozlar. Ular `tool/gen_sfx.py` bilan yaratiladi, begona audio ishlatilmagan |
@@ -100,7 +117,7 @@ moslab kattalashtiriladi, shuning uchun tezlik va aniqlik har bir telefonda bir 
 
 ## Keyingi qadamlar
 
-- Real (fotorealistik) grafika
+- `assets/art/` uchun real rasmlar (Gemini yoki 3D)
 - AdMob: mukofotli reklama orqali "qo'shimcha hayot"
 - Yangi bemorlar va asbob skinlari
 - Fon musiqasi

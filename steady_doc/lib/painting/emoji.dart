@@ -27,11 +27,3 @@ class EmojiPainter {
     canvas.restore();
   }
 }
-
-/// Makes a colorful emoji look like a bright shape on an X-ray film.
-const xrayFilter = ColorFilter.matrix(<double>[
-  0.15, 0.50, 0.05, 0, 40, //
-  0.19, 0.65, 0.07, 0, 60, //
-  0.22, 0.75, 0.08, 0, 80, //
-  0, 0, 0, 1, 0, //
-]);

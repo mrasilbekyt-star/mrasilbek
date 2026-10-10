@@ -11,14 +11,15 @@ import '../game/stages.dart';
 import '../l10n/strings.dart';
 import '../painting/table_painter.dart';
 import '../services/app_state.dart';
-import 'heart_monitor.dart';
+import '../services/services.dart';
+import 'vitals_monitor.dart';
 import 'widgets.dart';
 
 class GameScreen extends StatefulWidget {
-  const GameScreen({super.key, required this.level, required this.feedback});
+  const GameScreen({super.key, required this.level, required this.services});
 
   final LevelDef level;
-  final FeedbackSink feedback;
+  final Services services;
 
   @override
   State<GameScreen> createState() => _GameScreenState();
@@ -63,7 +64,8 @@ class _GameScreenState extends State<GameScreen>
     if (state != AppLifecycleState.resumed) _session.pause();
   }
 
-  GameSession _newSession() => GameSession(widget.level, feedback: widget.feedback);
+  GameSession _newSession() =>
+      GameSession(widget.level, feedback: widget.services.feedback);
 
   void _onTick(Duration elapsed) {
     final dt = (elapsed - _lastTick).inMicroseconds / 1e6;
@@ -93,7 +95,7 @@ class _GameScreenState extends State<GameScreen>
     final index = levels.indexOf(widget.level);
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
-        builder: (_) => GameScreen(level: levels[index + 1], feedback: widget.feedback),
+        builder: (_) => GameScreen(level: levels[index + 1], services: widget.services),
       ),
     );
   }
@@ -159,13 +161,15 @@ class _GameScreenState extends State<GameScreen>
         }
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFF12322B),
+        backgroundColor: const Color(0xFF070D0B),
         body: SafeArea(
           child: ListenableBuilder(
             listenable: _session,
             builder: (context, _) => Column(
               children: [
                 _topBar(s),
+                VitalsMonitor(session: _session, alarmLabel: s.alarm),
+                const SizedBox(height: 6),
                 Expanded(
                   child: Stack(
                     children: [
@@ -194,7 +198,7 @@ class _GameScreenState extends State<GameScreen>
             onPointerCancel: _onUp,
             onPointerHover: (e) => _onHover(e, fit),
             child: CustomPaint(
-              painter: TablePainter(_session, s),
+              painter: TablePainter(_session, s, widget.services.art),
               size: Size.infinite,
             ),
           );
@@ -204,14 +208,14 @@ class _GameScreenState extends State<GameScreen>
   Widget _topBar(Strings s) {
     final level = widget.level;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 6, 10, 6),
+      padding: const EdgeInsets.fromLTRB(4, 4, 12, 6),
       child: Row(
         children: [
           IconButton(
             onPressed: _session.pause,
             icon: const Icon(Icons.pause_rounded),
-            color: Colors.white,
-            iconSize: 30,
+            color: Colors.white70,
+            iconSize: 28,
             tooltip: s.paused,
           ),
           Expanded(
@@ -219,35 +223,32 @@ class _GameScreenState extends State<GameScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${s.patientNumber(level.number)} · ${level.patient}',
+                  '${s.patientNumber(level.number)} · ${s.patient(level.sex, level.age)}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                       color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700),
                 ),
                 Text(
-                  '${s.swallowed} ${level.items.join(' ')}',
+                  '${s.toRemove} ${s.findings(level.items)}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white70, fontSize: 14),
+                  style: const TextStyle(color: Colors.white60, fontSize: 13),
                 ),
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0x33FF5252),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Text(
-              '✖ ${_session.mistakes}',
-              style: const TextStyle(
-                  color: Color(0xFFFF8A80), fontSize: 16, fontWeight: FontWeight.w800),
-            ),
+          Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded, color: Color(0xFFFF6B6B), size: 20),
+              const SizedBox(width: 4),
+              Text(
+                '${_session.mistakes}',
+                style: const TextStyle(
+                    color: Color(0xFFFF8A80), fontSize: 18, fontWeight: FontWeight.w800),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          HeartMonitor(session: _session),
         ],
       ),
     );
@@ -266,7 +267,7 @@ class _GameScreenState extends State<GameScreen>
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
-      color: const Color(0xFF0E2621),
+      color: const Color(0xFF0B1513),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -332,7 +333,8 @@ class _GameScreenState extends State<GameScreen>
       if (_session.state == SessionState.won)
         Panel(
           title: s.won,
-          emoji: '🎉',
+          icon: Icons.verified_rounded,
+          iconColor: const Color(0xFF39D98A),
           actions: [
             if (!isLast) PanelAction(label: s.next, onTap: _nextLevel, primary: true),
             PanelAction(label: s.retry, onTap: _restart),
@@ -352,7 +354,8 @@ class _GameScreenState extends State<GameScreen>
       if (_session.state == SessionState.failed)
         Panel(
           title: s.failed,
-          emoji: '😵',
+          icon: Icons.monitor_heart_rounded,
+          iconColor: const Color(0xFFFF4D4D),
           actions: [
             PanelAction(label: s.retry, onTap: _restart, primary: true),
             PanelAction(label: s.menu, onTap: () => Navigator.of(context).pop()),
@@ -362,7 +365,8 @@ class _GameScreenState extends State<GameScreen>
       if (_session.state == SessionState.paused)
         Panel(
           title: s.paused,
-          emoji: '⏸️',
+          icon: Icons.pause_circle_rounded,
+          iconColor: const Color(0xFFCFE8E1),
           actions: [
             PanelAction(label: s.resume, onTap: _session.resume, primary: true),
             PanelAction(label: s.retry, onTap: _restart),

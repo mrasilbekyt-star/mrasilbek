@@ -2,12 +2,14 @@ import 'dart:math' as math;
 
 import 'package:flutter/rendering.dart';
 
+import '../game/geometry.dart';
 import '../game/levels.dart';
 import '../game/session.dart';
 import '../game/stages.dart';
 import '../l10n/strings.dart';
+import 'art.dart';
 import 'emoji.dart';
-import 'patient_painter.dart';
+import 'scene_painter.dart';
 
 /// How the 1000 x 1400 design canvas is scaled and centered on screen.
 class DesignFit {
@@ -27,76 +29,149 @@ class DesignFit {
   Offset toDesign(Offset local) => (local - offset) / scale;
 }
 
-/// Draws the whole operating table for a [GameSession].
+/// Draws the operating field for a [GameSession], using photos from
+/// [ArtAssets] where they exist and drawn graphics everywhere else.
 class TablePainter extends CustomPainter {
-  TablePainter(this.session, this.strings) : super(repaint: session);
+  TablePainter(this.session, this.strings, this.art) : super(repaint: session);
 
   final GameSession session;
   final Strings strings;
+  final ArtAssets art;
 
   static final _emoji = EmojiPainter();
 
-  static const _thread = Color(0xFF6A3FC8);
-  static const _incision = Color(0xFFB0304A);
-  static const _guide = Color(0xFF1F6F8B);
+  static const _full = Rect.fromLTWH(0, 0, 1000, 1400);
+  static const _marker = Color(0xFF6B3FA0);
+  static const _suture = Color(0xFF15181C);
+
+  /// Opened part of the abdomen during extraction.
+  static final Rect _cavity = BodyLayout.workZone.inflate(18);
 
   double get _t => session.now;
 
   @override
   void paint(Canvas canvas, Size size) {
     final fit = DesignFit(size);
+    canvas.drawRect(Offset.zero & size, Paint()..color = const Color(0xFF0B1714));
     canvas.save();
     canvas.translate(fit.offset.dx, fit.offset.dy);
     canvas.scale(fit.scale);
+    canvas.clipRect(_full);
 
-    final level = session.level;
-    paintBody(canvas, level);
-    paintFace(
-      canvas,
-      session.stress,
-      _t,
-      switch (session.state) {
-        SessionState.failed => Mood.fainted,
-        SessionState.won => Mood.happy,
-        _ => Mood.normal,
-      },
-    );
-
-    _paintTray(canvas);
     final stage = session.stage;
+    _paintScene(canvas, opened: stage is ExtractStage);
+    _paintTrayContents(canvas);
 
     final inject = session.stages.whereType<InjectStage>().firstOrNull;
-    if (inject != null) {
-      if (stage is InjectStage) {
-        _paintSyringe(canvas, inject);
-      } else {
-        _paintBandAid(canvas);
-      }
-    }
+    if (inject != null && stage is InjectStage) _paintSyringe(canvas, inject);
 
-    if (session.extractDone) {
-      _paintClosedIncision(canvas, stitched: session.stitchDone);
+    if (session.cutDone && stage is! ExtractStage) {
+      _paintIncision(canvas, session.layout.cut.points, healed: session.stitchDone);
     }
+    if (session.stitchDone) _paintSutures(canvas, session.layout.stitchTargets);
 
     switch (stage) {
       case XrayStage():
-        _paintFoundMarkers(canvas, stage.items);
+        _paintSkinMarks(canvas, stage.items);
         _paintXray(canvas, stage);
       case CutStage():
-        final xray = session.stages.whereType<XrayStage>().first;
-        _paintFoundMarkers(canvas, xray.items);
+        _paintSkinMarks(canvas, session.stages.whereType<XrayStage>().first.items);
         _paintCut(canvas, stage);
       case ExtractStage():
-        _paintCavity(canvas, stage);
+        _paintExtraction(canvas, stage);
       case StitchStage():
-        _paintStitches(canvas, stage);
+        _paintStitching(canvas, stage);
       case InjectStage():
         break;
     }
 
     _paintHoverAim(canvas);
     _paintFloats(canvas);
+    _paintVignette(canvas);
     canvas.restore();
+  }
+
+  // ----------------------------------------------------------------- scene
+
+  void _paintScene(Canvas canvas, {required bool opened}) {
+    final closed = art.sceneClosed;
+    if (closed != null) {
+      drawCover(canvas, closed, _full);
+    } else {
+      paintClosedScene(canvas, session.level);
+    }
+    if (!opened) return;
+    final open = art.sceneOpen;
+    if (open != null) {
+      drawCover(canvas, open, _full);
+      return;
+    }
+    // Retracted wound edges around the drawn organs.
+    final rr = RRect.fromRectAndRadius(_cavity, const Radius.circular(70));
+    canvas.drawRRect(rr.inflate(16),
+        Paint()
+          ..color = Color.lerp(session.level.skin, const Color(0xFF8A3B2E), 0.45)!);
+    paintOrgans(canvas, session.level, _cavity);
+    canvas.drawRRect(
+      rr,
+      Paint()
+        ..shader = const RadialGradient(
+          colors: [Color(0x00000000), Color(0x88200508)],
+          stops: [0.6, 1],
+        ).createShader(_cavity),
+    );
+  }
+
+  void _paintVignette(Canvas canvas) {
+    canvas.drawRect(
+      _full,
+      Paint()
+        ..shader = const RadialGradient(
+          radius: 0.95,
+          colors: [Color(0x00000000), Color(0x00000000), Color(0x99000000)],
+          stops: [0, 0.6, 1],
+        ).createShader(_full),
+    );
+  }
+
+  // --------------------------------------------------------------- findings
+
+  void _paintFinding(Canvas canvas, String id, Offset at, double size,
+      {bool silhouette = false, double opacity = 1}) {
+    final image = art.finding(id);
+    final paint = Paint()
+      ..filterQuality = FilterQuality.high
+      ..color = Color.fromRGBO(0, 0, 0, opacity);
+    if (silhouette) {
+      paint.colorFilter = const ColorFilter.mode(Color(0xF2EEF4F8), BlendMode.srcIn);
+    }
+    if (image != null) {
+      if (!silhouette && opacity >= 1) {
+        // Soft contact shadow so the object sits in the tissue.
+        canvas.drawOval(
+          Rect.fromCenter(center: at + const Offset(6, 10), width: size * 0.8, height: size * 0.5),
+          Paint()
+            ..color = const Color(0x66000000)
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+        );
+      }
+      drawContained(canvas, image, at, size, paint: paint);
+    } else {
+      _emoji.paint(canvas, findingEmoji[id] ?? '❓', at, size * 0.85,
+          filter: paint.colorFilter, opacity: opacity);
+    }
+  }
+
+  void _paintTrayContents(Canvas canvas) {
+    final extract = session.stages.whereType<ExtractStage>().first;
+    final tray = BodyLayout.tray.deflate(30);
+    var slot = 0;
+    for (final item in extract.items) {
+      if (!item.extracted) continue;
+      final p = Offset(tray.left + 40 + (slot % 3) * 55, tray.top + 45 + (slot ~/ 3) * 70);
+      _paintFinding(canvas, item.id, p, 58);
+      slot++;
+    }
   }
 
   // ---------------------------------------------------------------- inject
@@ -105,96 +180,111 @@ class TablePainter extends CustomPainter {
     const x = BodyLayout.syringeX;
     const barrelTop = BodyLayout.plungerStart + 30;
     const barrelBottom = BodyLayout.plungerEnd + 40;
-    final barrel = RRect.fromLTRBR(x - 34, barrelTop, x + 34, barrelBottom, const Radius.circular(10));
     final handleY = stage.handleY;
+    final rubberY = handleY + 30;
+    final barrel = RRect.fromLTRBR(x - 30, barrelTop, x + 30, barrelBottom, const Radius.circular(8));
 
-    // Needle into the arm.
+    // Drop shadow on the drapes.
+    canvas.drawRRect(
+      RRect.fromLTRBR(x - 30, handleY - 14, x + 30, BodyLayout.needleTipY, const Radius.circular(10))
+          .shift(const Offset(14, 16)),
+      Paint()
+        ..color = const Color(0x66000000)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12),
+    );
+
+    // Needle hub and needle into the IV port.
+    canvas.drawRect(Rect.fromLTRB(x - 10, barrelBottom, x + 10, barrelBottom + 26),
+        Paint()..color = const Color(0xFFE6ECEF));
     canvas.drawLine(
-      const Offset(x, barrelBottom + 20),
+      const Offset(x, barrelBottom + 26),
       const Offset(x, BodyLayout.needleTipY),
       Paint()
-        ..color = const Color(0xFF9AA5AD)
-        ..strokeWidth = 6,
+        ..shader = const LinearGradient(colors: [Color(0xFFF5F7F8), Color(0xFF8C969D)])
+            .createShader(const Rect.fromLTWH(x - 3, 0, 6, 10))
+        ..strokeWidth = 5,
     );
-    canvas.drawRect(Rect.fromLTRB(x - 12, barrelBottom, x + 12, barrelBottom + 24),
-        Paint()..color = const Color(0xFF7D8A93));
 
     // Medicine left in the barrel.
-    final rubberY = handleY + 30;
-    canvas.drawRect(Rect.fromLTRB(x - 30, rubberY, x + 30, barrelBottom - 2),
-        Paint()..color = const Color(0xCC6EC6FF));
-    // Barrel glass.
-    canvas.drawRRect(barrel, Paint()..color = const Color(0x33FFFFFF));
+    canvas.drawRect(Rect.fromLTRB(x - 27, rubberY, x + 27, barrelBottom - 2),
+        Paint()..color = const Color(0x8CCFE9F5));
+    // Glass barrel with reflections.
+    canvas.drawRRect(
+      barrel,
+      Paint()
+        ..shader = const LinearGradient(colors: [
+          Color(0x55FFFFFF),
+          Color(0x10FFFFFF),
+          Color(0x33FFFFFF),
+          Color(0x08FFFFFF),
+        ], stops: [0, 0.35, 0.7, 1])
+            .createShader(barrel.outerRect),
+    );
     canvas.drawRRect(
         barrel,
         Paint()
-          ..color = const Color(0xFF5B6B75)
+          ..color = const Color(0xCCDDE6EA)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 5);
-    for (var i = 1; i < 6; i++) {
-      final y = barrelTop + (barrelBottom - barrelTop) * i / 6;
-      canvas.drawLine(Offset(x - 34, y), Offset(x - 16, y),
-          Paint()
-            ..color = const Color(0xFF5B6B75)
-            ..strokeWidth = 3);
+          ..strokeWidth = 3);
+    final tick = Paint()
+      ..color = const Color(0xCC2B3238)
+      ..strokeWidth = 2;
+    for (var i = 1; i < 10; i++) {
+      final y = barrelTop + (barrelBottom - barrelTop) * i / 10;
+      canvas.drawLine(Offset(x - 30, y), Offset(x - (i.isEven ? 12 : 20), y), tick);
     }
-    // Plunger rod, rubber and handle.
-    canvas.drawRect(Rect.fromLTRB(x - 8, handleY, x + 8, rubberY),
-        Paint()..color = const Color(0xFFCFD8DC));
-    canvas.drawRect(Rect.fromLTRB(x - 30, rubberY - 8, x + 30, rubberY + 4),
-        Paint()..color = const Color(0xFF37474F));
-    final grip = RRect.fromLTRBR(x - 58, handleY - 16, x + 58, handleY + 6, const Radius.circular(10));
-    canvas.drawRRect(grip, Paint()..color = stage.grabbed ? const Color(0xFF26A69A) : const Color(0xFF455A64));
+    // Flange.
+    canvas.drawRRect(
+      RRect.fromLTRBR(x - 52, barrelTop - 8, x + 52, barrelTop + 4, const Radius.circular(5)),
+      Paint()..color = const Color(0xE6E9EEF1),
+    );
+    // Plunger rod, black rubber and thumb rest.
+    canvas.drawRect(Rect.fromLTRB(x - 7, handleY, x + 7, rubberY),
+        Paint()..color = const Color(0xF2F2F4F5));
+    canvas.drawRRect(
+      RRect.fromLTRBR(x - 27, rubberY - 10, x + 27, rubberY + 6, const Radius.circular(4)),
+      Paint()..color = const Color(0xFF1E2226),
+    );
+    canvas.drawRRect(
+      RRect.fromLTRBR(x - 46, handleY - 14, x + 46, handleY + 4, const Radius.circular(9)),
+      Paint()..color = stage.grabbed ? const Color(0xFFFFFFFF) : const Color(0xFFDDE3E6),
+    );
 
-    // Hint arrow while untouched.
+    // Hint: push down.
     if (!stage.grabbed && stage.progress < 0.05) {
       final bounce = 10 * math.sin(_t * 5);
       final arrow = Paint()
-        ..color = const Color(0xFF26A69A)
-        ..strokeWidth = 10
+        ..color = const Color(0xCCFFFFFF)
+        ..strokeWidth = 6
         ..strokeCap = StrokeCap.round
         ..style = PaintingStyle.stroke;
-      final ax = x + 95;
+      const ax = x + 92;
       final top = handleY + bounce;
-      canvas.drawLine(Offset(ax, top), Offset(ax, top + 110), arrow);
+      canvas.drawLine(Offset(ax, top), Offset(ax, top + 100), arrow);
       canvas.drawPath(
         Path()
-          ..moveTo(ax - 26, top + 84)
-          ..lineTo(ax, top + 112)
-          ..lineTo(ax + 26, top + 84),
+          ..moveTo(ax - 18, top + 80)
+          ..lineTo(ax, top + 102)
+          ..lineTo(ax + 18, top + 80),
         arrow,
       );
     }
 
-    // Speed gauge: green is safe, red hurts.
-    final gauge = Rect.fromLTRB(x + 70, barrelTop, x + 92, barrelBottom);
-    canvas.drawRRect(RRect.fromRectAndRadius(gauge, const Radius.circular(11)),
-        Paint()..color = const Color(0x33000000));
+    // Flow meter: green is safe, red hurts.
+    final gauge = Rect.fromLTRB(x + 64, barrelTop, x + 76, barrelBottom);
+    canvas.drawRRect(RRect.fromRectAndRadius(gauge, const Radius.circular(6)),
+        Paint()..color = const Color(0x66000000));
     final ratio = (stage.speed / stage.speedLimit).clamp(0.0, 1.3) / 1.3;
-    final fillTop = gauge.bottom - gauge.height * ratio;
     final color = ratio < 0.55
-        ? const Color(0xFF43A047)
+        ? const Color(0xFF39D98A)
         : ratio < 0.77
-            ? const Color(0xFFFFB300)
-            : const Color(0xFFE53935);
+            ? const Color(0xFFFFC145)
+            : const Color(0xFFFF4D4D);
     canvas.drawRRect(
-      RRect.fromLTRBR(gauge.left, fillTop, gauge.right, gauge.bottom, const Radius.circular(11)),
+      RRect.fromLTRBR(gauge.left, gauge.bottom - gauge.height * ratio, gauge.right, gauge.bottom,
+          const Radius.circular(6)),
       Paint()..color = color,
     );
-  }
-
-  void _paintBandAid(Canvas canvas) {
-    canvas.save();
-    canvas.translate(BodyLayout.syringeX, BodyLayout.needleTipY);
-    canvas.rotate(-0.5);
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(Rect.fromCenter(center: Offset.zero, width: 90, height: 34),
-          const Radius.circular(17)),
-      Paint()..color = const Color(0xFFE8B98A),
-    );
-    canvas.drawRect(Rect.fromCenter(center: Offset.zero, width: 30, height: 26),
-        Paint()..color = const Color(0xFFF5D7B5));
-    canvas.restore();
   }
 
   // ----------------------------------------------------------------- x-ray
@@ -202,101 +292,126 @@ class TablePainter extends CustomPainter {
   void _paintXray(Canvas canvas, XrayStage stage) {
     final lens = stage.lens;
     if (lens == null) {
-      // Pulse a ring on the belly to invite scanning.
-      final r = 70 + 12 * math.sin(_t * 3);
-      canvas.drawCircle(
-        BodyLayout.workZone.center,
-        r,
-        Paint()
-          ..color = const Color(0x6629B6F6)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 8,
-      );
+      _dashedCircle(canvas, BodyLayout.workZone.center, 80 + 6 * math.sin(_t * 3),
+          const Color(0x88FFFFFF), dashes: 24, width: 3);
       return;
     }
     const radius = XrayStage.lensRadius;
     final bounds = Rect.fromCircle(center: lens, radius: radius);
     canvas.save();
     canvas.clipPath(Path()..addOval(bounds));
-    canvas.drawRect(bounds, Paint()..color = const Color(0xFF0B1E3A));
-    final tissue = Paint()..color = const Color(0xFF173A66);
-    canvas.drawRRect(BodyLayout.torso, tissue);
-    for (final arm in [BodyLayout.leftArm, BodyLayout.rightArm]) {
-      canvas.drawRRect(RRect.fromRectAndRadius(arm, const Radius.circular(55)), tissue);
+    final film = art.sceneXray;
+    if (film != null) {
+      drawCover(canvas, film, _full);
+    } else {
+      _paintDrawnXray(canvas, bounds);
     }
-    canvas.drawCircle(BodyLayout.headCenter, BodyLayout.headRadius, tissue);
-
-    // Bones.
-    final bone = Paint()
-      ..color = const Color(0xFFBFD9F2)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 14
-      ..strokeCap = StrokeCap.round;
-    for (var y = 430.0; y < 1220; y += 46) {
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(Rect.fromCenter(center: Offset(500, y), width: 46, height: 34),
-            const Radius.circular(8)),
-        Paint()..color = const Color(0xFFBFD9F2),
-      );
-    }
-    for (var y = 480.0; y < 820; y += 56) {
-      canvas.drawPath(
-        Path()
-          ..moveTo(490, y)
-          ..quadraticBezierTo(330, y - 10, 300, y + 70)
-          ..moveTo(510, y)
-          ..quadraticBezierTo(670, y - 10, 700, y + 70),
-        bone,
-      );
-    }
-    for (final arm in [BodyLayout.leftArm, BodyLayout.rightArm]) {
-      canvas.drawLine(Offset(arm.center.dx, arm.top + 30), Offset(arm.center.dx, arm.bottom - 20), bone);
-    }
-
     for (final item in stage.items) {
-      _emoji.paint(canvas, item.emoji, item.pos, 74, filter: xrayFilter);
+      _paintFinding(canvas, item.id, item.pos, 82, silhouette: true);
     }
     canvas.restore();
 
-    // Lens rim.
-    canvas.drawCircle(
-        lens,
-        radius,
+    // Lens housing.
+    canvas.drawCircle(lens, radius + 2,
         Paint()
-          ..color = const Color(0xFFE3F2FD)
+          ..color = const Color(0xFFB9C3C9)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 8);
-    canvas.drawCircle(
-        lens,
-        radius + 7,
+          ..strokeWidth = 7);
+    canvas.drawCircle(lens, radius + 8,
         Paint()
-          ..color = const Color(0x6629B6F6)
+          ..color = const Color(0x88000000)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 6);
+          ..strokeWidth = 5);
 
-    // Progress ring while holding over an object.
     for (final item in stage.items) {
       if (item.found || item.dwell <= 0) continue;
       final sweep = 2 * math.pi * (item.dwell / XrayStage.dwellTime).clamp(0.0, 1.0);
       canvas.drawArc(
-        Rect.fromCircle(center: item.pos, radius: 58),
+        Rect.fromCircle(center: item.pos, radius: 60),
         -math.pi / 2,
         sweep,
         false,
         Paint()
-          ..color = const Color(0xFF00E676)
+          ..color = const Color(0xFF39D98A)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 9
+          ..strokeWidth = 5
           ..strokeCap = StrokeCap.round,
       );
     }
   }
 
-  void _paintFoundMarkers(Canvas canvas, List<HiddenItem> items) {
+  void _paintDrawnXray(Canvas canvas, Rect bounds) {
+    canvas.drawRect(bounds, Paint()..color = const Color(0xFF050607));
+    canvas.drawRRect(skinWindow.inflate(120),
+        Paint()
+          ..color = const Color(0xFF2A2E31)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 40));
+    final soft = Paint()
+      ..color = const Color(0x33A0A8AE)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 40
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 18);
+    canvas.drawPath(
+      Path()
+        ..moveTo(330, 760)
+        ..quadraticBezierTo(500, 640, 670, 760)
+        ..quadraticBezierTo(700, 950, 520, 980)
+        ..quadraticBezierTo(330, 1000, 360, 860),
+      soft,
+    );
+    final bone = Paint()
+      ..color = const Color(0xFFDDE3E8)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+    for (var y = 430.0; y < 1100; y += 52) {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(Rect.fromCenter(center: Offset(500, y), width: 62, height: 40),
+            const Radius.circular(10)),
+        bone,
+      );
+    }
+    final rib = Paint()
+      ..color = const Color(0xCCD3DAE0)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 16
+      ..strokeCap = StrokeCap.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+    for (var y = 440.0; y < 700; y += 58) {
+      canvas.drawPath(
+        Path()
+          ..moveTo(470, y)
+          ..quadraticBezierTo(300, y - 20, 250, y + 110)
+          ..moveTo(530, y)
+          ..quadraticBezierTo(700, y - 20, 750, y + 110),
+        rib,
+      );
+    }
+    // Pelvis.
+    canvas.drawPath(
+      Path()
+        ..moveTo(290, 1080)
+        ..quadraticBezierTo(320, 1250, 470, 1290)
+        ..moveTo(710, 1080)
+        ..quadraticBezierTo(680, 1250, 530, 1290),
+      Paint()
+        ..color = const Color(0xCCD3DAE0)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 30
+        ..strokeCap = StrokeCap.round
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
+    );
+  }
+
+  /// Purple skin-marker circles where the X-ray found something.
+  void _paintSkinMarks(Canvas canvas, List<HiddenItem> items) {
     for (final item in items) {
       if (!item.found) continue;
-      _dashedCircle(canvas, item.pos, 50, const Color(0xFF00897B));
-      _emoji.paint(canvas, item.emoji, item.pos, 40, opacity: 0.55);
+      _dashedCircle(canvas, item.pos, 48, _marker.withValues(alpha: 0.85), width: 4);
+      final x = Paint()
+        ..color = _marker.withValues(alpha: 0.85)
+        ..strokeWidth = 4
+        ..strokeCap = StrokeCap.round;
+      canvas.drawLine(item.pos + const Offset(-12, -12), item.pos + const Offset(12, 12), x);
+      canvas.drawLine(item.pos + const Offset(-12, 12), item.pos + const Offset(12, -12), x);
     }
   }
 
@@ -304,143 +419,206 @@ class TablePainter extends CustomPainter {
 
   void _paintCut(Canvas canvas, CutStage stage) {
     final path = stage.path;
-    // Dotted guide for the rest of the cut.
-    final dot = Paint()..color = _guide;
-    for (var s = stage.done; s <= path.length; s += 22) {
-      canvas.drawCircle(path.at(s), 5, dot);
+    // Surgical marker line for the rest of the cut.
+    final dash = Paint()
+      ..color = _marker.withValues(alpha: 0.9)
+      ..strokeWidth = 5
+      ..strokeCap = StrokeCap.round;
+    for (var s = stage.done; s < path.length; s += 26) {
+      canvas.drawLine(path.at(s), path.at(math.min(s + 14, path.length)), dash);
     }
-    // Finish flag.
-    final end = path.end;
-    canvas.drawCircle(end, 16, Paint()..color = const Color(0xFFFFFFFF));
-    canvas.drawCircle(end, 16,
-        Paint()
-          ..color = _guide
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 5);
-    // What has been cut.
     if (stage.done > 0) {
-      _polyline(canvas, path.pointsUntil(stage.done), _incision, 9);
+      _paintIncision(canvas, path.pointsUntil(stage.done), healed: false);
     }
-    // Where to (re)start.
     if (!stage.cutting && !stage.isComplete) {
       final p = stage.resumePoint;
-      final r = 24 + 6 * math.sin(_t * 6);
-      canvas.drawCircle(p, r, Paint()..color = const Color(0xAA00C853));
-      canvas.drawCircle(p, 10, Paint()..color = const Color(0xFFFFFFFF));
+      canvas.drawCircle(p, 20 + 4 * math.sin(_t * 6),
+          Paint()
+            ..color = const Color(0xCCFFFFFF)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 4);
+      canvas.drawCircle(p, 6, Paint()..color = const Color(0xFFFFFFFF));
+    }
+    final pen = stage.pen;
+    if (pen != null) _paintScalpel(canvas, path.at(stage.done), path.tangentAt(stage.done));
+  }
+
+  void _paintIncision(Canvas canvas, List<Offset> pts, {required bool healed}) {
+    if (pts.length < 2) return;
+    final path = _pathOf(pts);
+    // Swollen skin edges.
+    canvas.drawPath(path, _stroke(const Color(0x55C0503C), healed ? 12 : 22, blur: 4));
+    // The wound itself.
+    canvas.drawPath(path, _stroke(const Color(0xFF4A0A0E), healed ? 4 : 9));
+    canvas.drawPath(path, _stroke(const Color(0xFF8E1A20), healed ? 2 : 4));
+    if (healed) return;
+    // Beads of blood along the cut.
+    final line = Polyline(pts);
+    final rnd = math.Random(session.level.seed);
+    for (var s = 18.0; s < line.length; s += 34 + rnd.nextDouble() * 20) {
+      final side = rnd.nextBool() ? 1.0 : -1.0;
+      final p = line.at(s) + line.normalAt(s) * (side * (3 + rnd.nextDouble() * 4));
+      final r = 3.5 + rnd.nextDouble() * 4;
+      canvas.drawCircle(p, r, Paint()..color = const Color(0xFF6E0C12));
+      canvas.drawCircle(p - Offset(r * 0.3, r * 0.3), r * 0.35, Paint()..color = const Color(0x88FFB0A8));
     }
   }
 
-  void _paintClosedIncision(Canvas canvas, {required bool stitched}) {
-    final cut = session.layout.cut;
-    _polyline(canvas, cut.points, _incision, stitched ? 6 : 10);
-    if (stitched) {
-      _polyline(canvas, session.layout.stitchTargets, _thread, 5);
-    }
+  void _paintScalpel(Canvas canvas, Offset tip, Offset direction) {
+    canvas.save();
+    canvas.translate(tip.dx, tip.dy);
+    // Hold the scalpel up and to the right of the cut, like a right hand would.
+    canvas.rotate(math.atan2(direction.dy, direction.dx) + math.pi * 0.85);
+    canvas.drawRRect(
+      RRect.fromLTRBR(40, -10, 300, 10, const Radius.circular(6)).shift(const Offset(10, 14)),
+      Paint()
+        ..color = const Color(0x55000000)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+    );
+    final blade = Path()
+      ..moveTo(0, 0)
+      ..quadraticBezierTo(20, -18, 60, -10)
+      ..lineTo(60, 8)
+      ..quadraticBezierTo(30, 8, 0, 0)
+      ..close();
+    canvas.drawPath(
+      blade,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFFF7F9FA), Color(0xFF9AA4AB)],
+        ).createShader(const Rect.fromLTWH(0, -18, 60, 26)),
+    );
+    canvas.drawRRect(
+      RRect.fromLTRBR(56, -9, 300, 9, const Radius.circular(5)),
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFFE3E8EB), Color(0xFF7D878E), Color(0xFFC4CCD1)],
+        ).createShader(const Rect.fromLTWH(56, -9, 244, 18)),
+    );
+    canvas.restore();
   }
 
   // --------------------------------------------------------------- extract
 
-  void _paintCavity(Canvas canvas, ExtractStage stage) {
-    final zone = RRect.fromRectAndRadius(
-        BodyLayout.workZone.inflate(18), const Radius.circular(70));
-    // Skin flaps around the opening.
-    canvas.drawRRect(zone.inflate(14), Paint()..color = _shade(session.level.skin));
-    canvas.drawRRect(zone, Paint()..color = const Color(0xFFB4435E));
-    canvas.drawRRect(
-      zone,
-      Paint()
-        ..shader = const RadialGradient(
-          colors: [Color(0x00000000), Color(0x66400010)],
-          stops: [0.55, 1],
-        ).createShader(zone.outerRect),
-    );
-
-    // Safe channels.
-    final width = stage.width;
+  void _paintExtraction(Canvas canvas, ExtractStage stage) {
+    // Channels between the organs that the objects can slide through.
+    final hasPhoto = art.sceneOpen != null;
     for (final item in stage.items) {
-      final pts = item.corridor.points;
-      _polyline(canvas, pts, const Color(0xFF7A1F36), width + 10);
-      _polyline(canvas, pts, const Color(0xFFFFD3DC), width);
+      if (item.extracted) continue;
+      final path = _pathOf(item.corridor.points);
+      canvas.drawPath(path, _stroke(Color.fromRGBO(255, 214, 205, hasPhoto ? 0.35 : 0.55), stage.width + 10));
+      canvas.drawPath(path, _stroke(Color.fromRGBO(40, 6, 10, hasPhoto ? 0.55 : 0.9), stage.width));
+      canvas.drawPath(path,
+          _stroke(const Color(0x22FFFFFF), stage.width * 0.3, blur: 6));
     }
-    // Exit hole.
-    canvas.drawCircle(stage.exit, ExtractStage.exitRadius + 8, Paint()..color = const Color(0xFF3A0A16));
-    canvas.drawCircle(
-      stage.exit,
-      ExtractStage.exitRadius + 8 + 4 * math.sin(_t * 4),
-      Paint()
-        ..color = const Color(0xFF00E676)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 5,
-    );
+    // Opening to pull objects out through.
+    canvas.drawCircle(stage.exit, ExtractStage.exitRadius + 6, Paint()..color = const Color(0xFF14030A));
+    _dashedCircle(canvas, stage.exit, ExtractStage.exitRadius + 14 + 3 * math.sin(_t * 4),
+        const Color(0xCC39D98A), width: 4);
 
     for (var i = 0; i < stage.items.length; i++) {
       final item = stage.items[i];
       if (item.extracted) continue;
       final held = stage.grabbed == i;
-      _emoji.paint(canvas, item.emoji, item.pos, held ? 70 : 64);
-      if (held) _paintTweezers(canvas, item.pos);
+      _paintFinding(canvas, item.id, item.pos, held ? 86 : 80);
+      if (held) _paintForceps(canvas, item.pos);
     }
   }
 
-  void _paintTweezers(Canvas canvas, Offset at) {
-    final metal = Paint()
-      ..color = const Color(0xFF90A4AE)
-      ..strokeWidth = 9
-      ..strokeCap = StrokeCap.round;
-    canvas.drawLine(at + const Offset(-14, -10), at + const Offset(40, -120), metal);
-    canvas.drawLine(at + const Offset(14, -10), at + const Offset(52, -116), metal);
-  }
-
-  void _paintTray(Canvas canvas) {
-    const tray = BodyLayout.tray;
-    canvas.drawRRect(RRect.fromRectAndRadius(tray, const Radius.circular(24)),
-        Paint()..color = const Color(0xFF90A4AE));
-    canvas.drawRRect(RRect.fromRectAndRadius(tray.deflate(10), const Radius.circular(18)),
-        Paint()..color = const Color(0xFFCFD8DC));
-    final extract = session.stages.whereType<ExtractStage>().first;
-    var slot = 0;
-    for (final item in extract.items) {
-      if (!item.extracted) continue;
-      final p = Offset(tray.left + 50 + (slot % 3) * 50, tray.top + 60 + (slot ~/ 3) * 70);
-      _emoji.paint(canvas, item.emoji, p, 52);
-      slot++;
+  void _paintForceps(Canvas canvas, Offset at) {
+    final photo = art.forceps;
+    if (photo != null) {
+      canvas.save();
+      canvas.translate(at.dx, at.dy);
+      canvas.rotate(0.45);
+      const h = 420.0;
+      final w = h * photo.width / photo.height;
+      canvas.drawImageRect(photo, Offset.zero & Size(photo.width.toDouble(), photo.height.toDouble()),
+          Rect.fromLTWH(-w / 2, -h, w, h), Paint()..filterQuality = FilterQuality.high);
+      canvas.restore();
+      return;
     }
+    canvas.save();
+    canvas.translate(at.dx, at.dy);
+    canvas.rotate(0.45);
+    final shadow = Paint()
+      ..color = const Color(0x55000000)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+    canvas.drawRect(const Rect.fromLTRB(-4, -380, 34, -20).shift(const Offset(16, 12)), shadow);
+    for (final side in [-1.0, 1.0]) {
+      final prong = Path()
+        ..moveTo(side * 12, -6)
+        ..lineTo(side * 7, -60)
+        ..lineTo(side * 16, -380)
+        ..lineTo(side * 28, -380)
+        ..lineTo(side * 18, -60)
+        ..close();
+      canvas.drawPath(
+        prong,
+        Paint()
+          ..shader = const LinearGradient(
+            colors: [Color(0xFFF4F6F7), Color(0xFF7F8A91), Color(0xFFD0D7DB)],
+          ).createShader(const Rect.fromLTRB(-30, -380, 30, 0)),
+      );
+    }
+    canvas.restore();
   }
 
   // ---------------------------------------------------------------- stitch
 
-  void _paintStitches(Canvas canvas, StitchStage stage) {
+  void _paintStitching(Canvas canvas, StitchStage stage) {
     final targets = stage.targets;
-    if (stage.stitched > 1) {
-      _polyline(canvas, targets.sublist(0, stage.stitched), _thread, 6);
-    }
+    if (stage.stitched > 1) _paintSutures(canvas, targets.sublist(0, stage.stitched));
     final pen = stage.pen;
     if (stage.drawing && pen != null && stage.stitched > 0) {
-      _polyline(canvas, [targets[stage.stitched - 1], pen], _thread.withValues(alpha: 0.7), 5);
+      canvas.drawPath(_pathOf([targets[stage.stitched - 1], pen]), _stroke(_suture, 3.5));
+      _paintNeedle(canvas, pen);
     }
-    for (var i = 0; i < targets.length; i++) {
-      final p = targets[i];
-      final done = i < stage.stitched;
-      canvas.drawCircle(p, 13, Paint()..color = done ? _thread : const Color(0xFFFFFFFF));
-      canvas.drawCircle(
-          p,
-          13,
-          Paint()
-            ..color = _thread
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 4);
+    for (var i = stage.stitched; i < targets.length; i++) {
+      canvas.drawCircle(targets[i], 7, Paint()..color = _marker.withValues(alpha: 0.9));
     }
     if (!stage.isComplete) {
-      final next = targets[stage.stitched];
       canvas.drawCircle(
-        next,
-        stage.hitRadius + 4 * math.sin(_t * 6),
+        targets[stage.stitched],
+        stage.hitRadius * 0.8 + 4 * math.sin(_t * 6),
         Paint()
-          ..color = const Color(0xFF00C853)
+          ..color = const Color(0xCCFFFFFF)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 6,
+          ..strokeWidth = 3,
       );
     }
+  }
+
+  void _paintSutures(Canvas canvas, List<Offset> pts) {
+    canvas.drawPath(_pathOf(pts), _stroke(const Color(0x44000000), 6, blur: 3));
+    canvas.drawPath(_pathOf(pts), _stroke(_suture, 3.5));
+    for (final p in pts) {
+      canvas.drawCircle(p, 5, Paint()..color = _suture);
+      final tail = Paint()
+        ..color = _suture
+        ..strokeWidth = 2
+        ..strokeCap = StrokeCap.round;
+      canvas.drawLine(p, p + const Offset(9, -11), tail);
+      canvas.drawLine(p, p + const Offset(12, -4), tail);
+    }
+  }
+
+  void _paintNeedle(Canvas canvas, Offset at) {
+    canvas.drawArc(
+      Rect.fromCircle(center: at + const Offset(0, -18), radius: 18),
+      math.pi * 0.1,
+      math.pi * 0.9,
+      false,
+      Paint()
+        ..color = const Color(0xFFDDE3E7)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3.5
+        ..strokeCap = StrokeCap.round,
+    );
   }
 
   // --------------------------------------------------------------- helpers
@@ -449,88 +627,82 @@ class TablePainter extends CustomPainter {
     final hover = session.hoverPos;
     if (hover == null || session.stage is XrayStage) return;
     final aim = Paint()
-      ..color = const Color(0xCC00897B)
+      ..color = const Color(0xCCFFFFFF)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 4;
-    canvas.drawCircle(hover, 22, aim);
-    canvas.drawLine(hover + const Offset(-34, 0), hover + const Offset(-12, 0), aim);
-    canvas.drawLine(hover + const Offset(12, 0), hover + const Offset(34, 0), aim);
-    canvas.drawLine(hover + const Offset(0, -34), hover + const Offset(0, -12), aim);
-    canvas.drawLine(hover + const Offset(0, 12), hover + const Offset(0, 34), aim);
+      ..strokeWidth = 2.5;
+    canvas.drawCircle(hover, 18, aim);
+    for (final d in const [Offset(-1, 0), Offset(1, 0), Offset(0, -1), Offset(0, 1)]) {
+      canvas.drawLine(hover + d * 10, hover + d * 30, aim);
+    }
   }
 
   void _paintFloats(Canvas canvas) {
     for (final f in session.floats) {
       final age = _t - f.born;
       final opacity = (1 - age / 1.2).clamp(0.0, 1.0);
-      final pos = f.pos - Offset(0, 50 + 70 * age);
-      final text = strings.mistake(f.mistake);
-      final outline = TextPainter(
-        text: TextSpan(
-          text: text,
-          style: TextStyle(
-            fontSize: 44,
-            fontWeight: FontWeight.w900,
-            foreground: Paint()
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 8
-              ..color = Color.fromRGBO(255, 255, 255, opacity),
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      final fill = TextPainter(
-        text: TextSpan(
-          text: text,
-          style: TextStyle(
-            fontSize: 44,
-            fontWeight: FontWeight.w900,
-            color: Color.fromRGBO(229, 57, 53, opacity),
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      var x = pos.dx - fill.width / 2;
-      x = x.clamp(10.0, BodyLayout.design.width - fill.width - 10);
+      final pos = f.pos - Offset(0, 50 + 60 * age);
+      final text = strings.mistake(f.mistake).toUpperCase();
+      TextPainter layout(Paint? stroke, Color? color) => TextPainter(
+            text: TextSpan(
+              text: text,
+              style: TextStyle(
+                fontSize: 38,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.5,
+                foreground: stroke,
+                color: color,
+              ),
+            ),
+            textDirection: TextDirection.ltr,
+          )..layout();
+      final outline = layout(
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 7
+          ..color = Color.fromRGBO(0, 0, 0, opacity * 0.8),
+        null,
+      );
+      final fill = layout(null, Color.fromRGBO(255, 77, 77, opacity));
+      final x = (pos.dx - fill.width / 2).clamp(10.0, BodyLayout.design.width - fill.width - 10);
       final at = Offset(x, pos.dy - fill.height / 2);
       outline.paint(canvas, at);
       fill.paint(canvas, at);
     }
   }
 
-  static Color _shade(Color c) => Color.lerp(c, const Color(0xFF000000), 0.12)!;
-
-  static void _polyline(Canvas canvas, List<Offset> pts, Color color, double width) {
-    if (pts.length < 2) return;
+  static Path _pathOf(List<Offset> pts) {
     final path = Path()..moveTo(pts.first.dx, pts.first.dy);
     for (final p in pts.skip(1)) {
       path.lineTo(p.dx, p.dy);
     }
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = color
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = width
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round,
-    );
+    return path;
   }
 
-  static void _dashedCircle(Canvas canvas, Offset c, double r, Color color) {
+  static Paint _stroke(Color color, double width, {double blur = 0}) {
     final paint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 5
+      ..strokeWidth = width
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    if (blur > 0) paint.maskFilter = MaskFilter.blur(BlurStyle.normal, blur);
+    return paint;
+  }
+
+  static void _dashedCircle(Canvas canvas, Offset c, double r, Color color,
+      {int dashes = 16, double width = 5}) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = width
       ..strokeCap = StrokeCap.round;
-    const dashes = 14;
     for (var i = 0; i < dashes; i++) {
-      final a = 2 * math.pi * i / dashes;
-      canvas.drawArc(Rect.fromCircle(center: c, radius: r), a, math.pi / dashes, false, paint);
+      canvas.drawArc(Rect.fromCircle(center: c, radius: r), 2 * math.pi * i / dashes,
+          math.pi / dashes, false, paint);
     }
   }
 
   @override
   bool shouldRepaint(TablePainter old) =>
-      old.session != session || old.strings.lang != strings.lang;
+      old.session != session || old.strings.lang != strings.lang || old.art != art;
 }

@@ -1,24 +1,25 @@
 import 'package:flutter/material.dart';
 
 import '../game/levels.dart';
-import '../game/session.dart';
+import '../l10n/strings.dart';
 import '../services/app_state.dart';
+import '../services/services.dart';
 import 'game_screen.dart';
 import 'widgets.dart';
 
 class LevelSelectScreen extends StatelessWidget {
-  const LevelSelectScreen({super.key, required this.feedback});
+  const LevelSelectScreen({super.key, required this.services});
 
-  final FeedbackSink feedback;
+  final Services services;
 
   @override
   Widget build(BuildContext context) {
     final app = AppScope.of(context);
     final s = app.strings;
     return Scaffold(
-      backgroundColor: const Color(0xFF0E2621),
+      backgroundColor: const Color(0xFF070D0B),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF12322B),
+        backgroundColor: const Color(0xFF0B1513),
         foregroundColor: Colors.white,
         title: Text(s.patients),
         actions: [
@@ -28,7 +29,7 @@ class LevelSelectScreen extends StatelessWidget {
               child: Text(
                 '★ ${app.totalStars}/${levels.length * 3}',
                 style: const TextStyle(
-                  color: Color(0xFFFFD54F),
+                  color: Color(0xFFFFC145),
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
                 ),
@@ -43,7 +44,7 @@ class LevelSelectScreen extends StatelessWidget {
           maxCrossAxisExtent: 180,
           mainAxisSpacing: 12,
           crossAxisSpacing: 12,
-          childAspectRatio: 0.78,
+          childAspectRatio: 0.72,
         ),
         itemCount: levels.length,
         itemBuilder: (context, i) {
@@ -53,11 +54,11 @@ class LevelSelectScreen extends StatelessWidget {
             level: level,
             stars: app.starsFor(level.number),
             unlocked: unlocked,
-            label: s.patientNumber(level.number),
+            strings: s,
             onTap: unlocked
                 ? () => Navigator.of(context).push(
                       MaterialPageRoute<void>(
-                        builder: (_) => GameScreen(level: level, feedback: feedback),
+                        builder: (_) => GameScreen(level: level, services: services),
                       ),
                     )
                 : null,
@@ -73,54 +74,75 @@ class _LevelCard extends StatelessWidget {
     required this.level,
     required this.stars,
     required this.unlocked,
-    required this.label,
+    required this.strings,
     required this.onTap,
   });
 
   final LevelDef level;
   final int stars;
   final bool unlocked;
-  final String label;
+  final Strings strings;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
+    final dim = unlocked ? 1.0 : 0.38;
     return Material(
-      color: unlocked ? const Color(0xFF1E4D42) : const Color(0xFF173029),
-      borderRadius: BorderRadius.circular(20),
+      color: unlocked ? const Color(0xFF10201C) : const Color(0xFF0B1513),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: unlocked ? const Color(0xFF24433B) : const Color(0xFF15241F)),
+      ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(10),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  color: unlocked ? const Color(0xFF80CBC4) : Colors.white38,
-                  fontWeight: FontWeight.w800,
+          child: Opacity(
+            opacity: dim,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  strings.patientNumber(level.number).toUpperCase(),
+                  style: const TextStyle(
+                    color: Color(0xFF39D98A),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.2,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 6),
-              unlocked
-                  ? Text(level.items.join(), style: const TextStyle(fontSize: 34))
-                  : const Icon(Icons.lock_rounded, color: Colors.white38, size: 40),
-              const SizedBox(height: 6),
-              Text(
-                level.patient,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: unlocked ? Colors.white : Colors.white38,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
+                const SizedBox(height: 8),
+                Icon(
+                  unlocked
+                      ? (level.sex == Sex.male ? Icons.man_rounded : Icons.woman_rounded)
+                      : Icons.lock_rounded,
+                  color: Colors.white70,
+                  size: 38,
                 ),
-              ),
-              const SizedBox(height: 4),
-              FittedBox(child: StarRow(stars: stars, size: 24)),
-            ],
+                const SizedBox(height: 6),
+                Text(
+                  strings.patient(level.sex, level.age),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  strings.findings(level.items),
+                  maxLines: 2,
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white54, fontSize: 12),
+                ),
+                const SizedBox(height: 6),
+                FittedBox(child: StarRow(stars: stars, size: 22)),
+              ],
+            ),
           ),
         ),
       ),

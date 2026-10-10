@@ -67,6 +67,22 @@ void main() {
     expect(session.bpm, greaterThanOrEqualTo(GameSession.restingBpm));
   });
 
+  test('vitals worsen as the patient panics', () {
+    final session = GameSession(levels.first);
+    expect(session.spo2, 99);
+    expect(session.alarm, isFalse);
+    final calmSystolic = session.systolic;
+    for (var i = 0; i < 6; i++) {
+      session.mistake(MistakeKind.wall, Offset.zero);
+      for (var k = 0; k < 16; k++) {
+        session.tick(0.05);
+      }
+    }
+    expect(session.spo2, lessThan(95));
+    expect(session.systolic, greaterThan(calmSystolic + 15));
+    expect(session.alarm, isTrue);
+  });
+
   test('stars drop with mistakes', () {
     final session = GameSession(levels.first);
     expect(session.stars, 3);

@@ -11,20 +11,21 @@ class Toast extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xEE00796B),
+        color: const Color(0xE6101A17),
         borderRadius: BorderRadius.circular(24),
-        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 8)],
+        border: Border.all(color: const Color(0xFF2B4A42)),
+        boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 10)],
       ),
       child: Text(
         text,
         textAlign: TextAlign.center,
-        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+        style: const TextStyle(color: Color(0xFFCFE8E1), fontWeight: FontWeight.w600),
       ),
     );
   }
 }
 
-/// "Great!" that pops in between stages.
+/// "Stage complete" that pops in between stages.
 class StageClearBanner extends StatelessWidget {
   const StageClearBanner({super.key, required this.text});
 
@@ -38,19 +39,28 @@ class StageClearBanner extends StatelessWidget {
       curve: Curves.elasticOut,
       builder: (context, scale, child) => Transform.scale(scale: scale, child: child),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 34, vertical: 18),
+        padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 16),
         decoration: BoxDecoration(
-          color: const Color(0xF2FFFFFF),
-          borderRadius: BorderRadius.circular(28),
-          boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 18)],
+          color: const Color(0xE6081210),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFF39D98A), width: 2),
+          boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 18)],
         ),
-        child: Text(
-          '✓ $text',
-          style: const TextStyle(
-            color: Color(0xFF00897B),
-            fontSize: 38,
-            fontWeight: FontWeight.w900,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.check_circle_rounded, color: Color(0xFF39D98A), size: 32),
+            const SizedBox(width: 12),
+            Text(
+              text.toUpperCase(),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.5,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -70,13 +80,15 @@ class Panel extends StatelessWidget {
   const Panel({
     super.key,
     required this.title,
-    required this.emoji,
+    required this.icon,
+    required this.iconColor,
     required this.children,
     required this.actions,
   });
 
   final String title;
-  final String emoji;
+  final IconData icon;
+  final Color iconColor;
   final List<Widget> children;
   final List<PanelAction> actions;
 
@@ -84,7 +96,7 @@ class Panel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Positioned.fill(
       child: ColoredBox(
-        color: const Color(0x99000000),
+        color: const Color(0xB3000000),
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
@@ -98,7 +110,7 @@ class Panel extends StatelessWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(emoji, style: const TextStyle(fontSize: 52)),
+                      Icon(icon, size: 56, color: iconColor),
                       const SizedBox(height: 6),
                       Text(
                         title,

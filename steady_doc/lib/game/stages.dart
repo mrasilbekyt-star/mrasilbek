@@ -149,9 +149,10 @@ class InjectStage extends Stage {
 
 /// A swallowed object, hidden until found with the X-ray.
 class HiddenItem {
-  HiddenItem(this.emoji, this.pos);
+  HiddenItem(this.id, this.pos);
 
-  final String emoji;
+  /// Key into [findingEmoji] and the art for this object.
+  final String id;
   final Offset pos;
   bool found = false;
 
@@ -233,6 +234,9 @@ class CutStage extends Stage {
   /// Arc length cut so far.
   double done = 0;
   bool cutting = false;
+
+  /// Where the scalpel is while cutting.
+  Offset? pen;
   final _speed = _Speedometer();
 
   static const double speedLimit = 1500;
@@ -253,6 +257,7 @@ class CutStage extends Stage {
     if (isComplete) return;
     if ((s.pos - resumePoint).distance > math.max(tolerance, 45)) return;
     cutting = true;
+    pen = s.pos;
     _speed
       ..reset()
       ..add(s.pos, s.time);
@@ -261,10 +266,12 @@ class CutStage extends Stage {
   @override
   void move(PenSample s) {
     if (!cutting || isComplete) return;
+    pen = s.pos;
     // Only look a little ahead, so jumping along the line counts as leaving it.
     final proj = path.project(s.pos, from: done - 30, to: done + 60);
     if (proj.distance > tolerance) {
       cutting = false;
+      pen = null;
       host.mistake(MistakeKind.offLine, s.pos);
       return;
     }
@@ -275,18 +282,24 @@ class CutStage extends Stage {
     } else if (s.stylus && s.pressure > deepPressure) {
       host.mistake(MistakeKind.tooDeep, s.pos);
     }
-    if (isComplete) cutting = false;
+    if (isComplete) {
+      cutting = false;
+      pen = null;
+    }
   }
 
   @override
-  void up() => cutting = false;
+  void up() {
+    cutting = false;
+    pen = null;
+  }
 }
 
 /// An object being pulled out through its corridor.
 class ExtractItem {
-  ExtractItem(this.emoji, this.corridor) : pos = corridor.start;
+  ExtractItem(this.id, this.corridor) : pos = corridor.start;
 
-  final String emoji;
+  final String id;
   final Polyline corridor;
   Offset pos;
   bool extracted = false;

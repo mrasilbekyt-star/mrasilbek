@@ -1,3 +1,4 @@
+import '../game/levels.dart';
 import '../game/stages.dart';
 
 /// All player-facing text, in Uzbek, English and Russian.
@@ -22,9 +23,9 @@ class Strings {
 
   String get appTitle => 'Steady Doc';
   String get tagline => _t(
-        "Qo'li titramaydigan jarroh o'yini.\nS Pen bilan yanada zo'r ✍️",
-        'A steady-hand surgery game.\nEven better with an S Pen ✍️',
-        'Игра для хирурга с твёрдой рукой.\nЕщё лучше с S Pen ✍️',
+        'Haqiqiy jarrohlik simulyatori.\nS Pen uchun yaratilgan.',
+        'A realistic surgery simulator.\nMade for the S Pen.',
+        'Реалистичный симулятор хирурга.\nСоздан для S Pen.',
       );
 
   String get play => _t("O'ynash", 'Play', 'Играть');
@@ -44,8 +45,50 @@ class Strings {
   String get patients => _t('Bemorlar', 'Patients', 'Пациенты');
   String patientNumber(int n) =>
       _t('$n-bemor', 'Patient $n', 'Пациент $n');
-  String get swallowed =>
-      _t('Yutib yuborgan:', 'Swallowed:', 'Проглотил(а):');
+  String get toRemove =>
+      _t('Olib tashlash kerak:', 'To remove:', 'Удалить:');
+
+  String patient(Sex sex, int age) => switch (lang) {
+        'uz' => '${sex == Sex.male ? 'Erkak' : 'Ayol'}, $age yosh',
+        'ru' => '${sex == Sex.male ? 'Мужчина' : 'Женщина'}, $age ${_years(age)}',
+        _ => '${sex == Sex.male ? 'Male' : 'Female'}, $age',
+      };
+
+  static String _years(int n) {
+    if (n % 10 == 1 && n % 100 != 11) return 'год';
+    if (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14)) return 'года';
+    return 'лет';
+  }
+
+  String finding(String id) => switch (id) {
+        'coin' => _t('tanga', 'coin', 'монета'),
+        'ring' => _t('uzuk', 'ring', 'кольцо'),
+        'key' => _t('kalit', 'key', 'ключ'),
+        'denture' => _t('tish protezi', 'denture', 'зубной протез'),
+        'battery' => _t('batareya', 'battery', 'батарейка'),
+        'magnet' => _t('magnit', 'magnet', 'магнит'),
+        'gallstone' => _t("o't toshi", 'gallstone', 'желчный камень'),
+        'bolt' => _t('bolt', 'bolt', 'болт'),
+        'pin' => _t("to'g'nag'ich", 'safety pin', 'булавка'),
+        'dice' => _t("o'yin soqqasi", 'die', 'игральная кость'),
+        'pawn' => _t('shaxmat donasi', 'chess pawn', 'шахматная пешка'),
+        'spoon' => _t('qoshiq', 'spoon', 'ложка'),
+        'toothbrush' => _t("tish cho'tkasi", 'toothbrush', 'зубная щётка'),
+        _ => id,
+      };
+
+  /// "magnet ×2, battery".
+  String findings(List<String> ids) {
+    final counts = <String, int>{};
+    for (final id in ids) {
+      counts[id] = (counts[id] ?? 0) + 1;
+    }
+    return [
+      for (final e in counts.entries) e.value > 1 ? '${finding(e.key)} ×${e.value}' : finding(e.key),
+    ].join(', ');
+  }
+
+  String get alarm => _t('XAVF', 'ALARM', 'ТРЕВОГА');
   String get version => _t('Versiya', 'Version', 'Версия');
 
   String stageName(StageKind kind) => switch (kind) {
@@ -96,7 +139,8 @@ class Strings {
           _t('Juda qattiq!', 'Too hard!', 'Слишком сильно!'),
       };
 
-  String get great => _t('Ajoyib!', 'Great!', 'Отлично!');
+  String get great =>
+      _t('Bosqich yakunlandi', 'Stage complete', 'Этап завершён');
   String get won => _t(
         'Operatsiya muvaffaqiyatli!',
         'Operation successful!',
@@ -120,13 +164,13 @@ class Strings {
   String get resume => _t('Davom etish', 'Resume', 'Продолжить');
   String get paused => _t('Pauza', 'Paused', 'Пауза');
   String get penDetected => _t(
-        'S Pen aniqlandi ✍️ Bosim kuchi va hover yoqildi',
-        'S Pen detected ✍️ Pressure and hover are on',
-        'S Pen обнаружен ✍️ Нажим и наведение включены',
+        'S Pen aniqlandi: bosim kuchi va hover yoqildi',
+        'S Pen detected: pressure and hover are on',
+        'S Pen обнаружен: нажим и наведение включены',
       );
   String get allCured => _t(
-        'Hammani davoladingiz! Tez orada yangi bemorlar keladi.',
-        'You cured everyone! More patients coming soon.',
-        'Вы вылечили всех! Скоро придут новые пациенты.',
+        "Barcha bemorlar davolandi. Tez orada yangi holatlar qo'shiladi.",
+        'Every patient is treated. New cases are coming soon.',
+        'Все пациенты вылечены. Скоро появятся новые случаи.',
       );
 }

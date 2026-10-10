@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'game/session.dart';
+import 'painting/art.dart';
 import 'services/app_state.dart';
 import 'services/feedback.dart';
+import 'services/services.dart';
 import 'ui/home_screen.dart';
 
 Future<void> main() async {
@@ -11,14 +12,18 @@ Future<void> main() async {
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   final state = await AppState.load();
   await DeviceFeedback.configureAudio();
-  runApp(SteadyDocApp(state: state, feedback: DeviceFeedback(state)));
+  final art = await ArtAssets.load(rootBundle);
+  runApp(SteadyDocApp(
+    state: state,
+    services: Services(feedback: DeviceFeedback(state), art: art),
+  ));
 }
 
 class SteadyDocApp extends StatelessWidget {
-  const SteadyDocApp({super.key, required this.state, required this.feedback});
+  const SteadyDocApp({super.key, required this.state, required this.services});
 
   final AppState state;
-  final FeedbackSink feedback;
+  final Services services;
 
   @override
   Widget build(BuildContext context) {
@@ -28,9 +33,13 @@ class SteadyDocApp extends StatelessWidget {
         title: 'Steady Doc',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF00897B)),
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF1FA67A),
+            brightness: Brightness.dark,
+          ),
+          scaffoldBackgroundColor: const Color(0xFF070D0B),
         ),
-        home: HomeScreen(feedback: feedback),
+        home: HomeScreen(services: services),
       ),
     );
   }

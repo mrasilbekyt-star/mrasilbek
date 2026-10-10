@@ -3,17 +3,16 @@
 //   flutter test tool/render_store_assets_test.dart
 //
 // Writes android/app/src/main/res/mipmap-*/ic_launcher.png and store/*.png.
+// Replace store/icon_512.png with a photo-real icon later if you make one.
 import 'dart:io';
-import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:steady_doc/painting/patient_painter.dart';
+import 'package:steady_doc/game/session.dart';
 
-const _skin = Color(0xFFF2C9A0);
-const _capColor = Color(0xFF00695C);
+const _green = Color(0xFF39D98A);
 
 Future<void> _save(String path, int w, int h, void Function(Canvas) paint) async {
   final recorder = ui.PictureRecorder();
@@ -25,128 +24,162 @@ Future<void> _save(String path, int w, int h, void Function(Canvas) paint) async
     ..writeAsBytesSync(png!.buffer.asUint8List());
 }
 
-/// Patient head with a surgical cap and a band-aid, centered on the origin.
-void _paintHead(Canvas c) {
-  final edge = Paint()
-    ..color = Color.lerp(_skin, Colors.black, 0.18)!
-    ..style = PaintingStyle.stroke
-    ..strokeWidth = 6;
-  for (final dx in [-130.0, 130.0]) {
-    c.drawCircle(Offset(dx, 12), 30, Paint()..color = _skin);
-    c.drawCircle(Offset(dx, 12), 30, edge);
-  }
-  c.drawCircle(Offset.zero, 130, Paint()..color = _skin);
-  c.save();
-  c.clipPath(Path()..addOval(Rect.fromCircle(center: Offset.zero, radius: 132)));
-  c.drawRect(const Rect.fromLTRB(-140, -140, 140, -66), Paint()..color = _capColor);
-  c.restore();
-  c.drawCircle(Offset.zero, 130, edge);
-  // White cross on the cap.
-  final cross = Paint()..color = Colors.white;
-  c.drawRect(Rect.fromCenter(center: const Offset(0, -98), width: 36, height: 12), cross);
-  c.drawRect(Rect.fromCenter(center: const Offset(0, -98), width: 12, height: 36), cross);
-
-  paintFace(c, 0.25, 1, Mood.normal, center: Offset.zero);
-
-  // Band-aid on the cheek.
-  c.save();
-  c.translate(78, 52);
-  c.rotate(-0.55);
-  c.drawRRect(
-    RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset.zero, width: 82, height: 30), const Radius.circular(15)),
-    Paint()..color = const Color(0xFFE8B98A),
+void _background(Canvas c, Rect r, {Alignment center = Alignment.center}) {
+  c.drawRect(
+    r,
+    Paint()
+      ..shader = RadialGradient(
+        center: center,
+        radius: 1.1,
+        colors: const [Color(0xFF16413A), Color(0xFF071210), Color(0xFF030706)],
+        stops: const [0, 0.65, 1],
+      ).createShader(r),
   );
-  c.drawRect(Rect.fromCenter(center: Offset.zero, width: 26, height: 22),
-      Paint()..color = const Color(0xFFF7DCC0));
-  c.restore();
+  // Faint monitor grid.
+  final grid = Paint()
+    ..color = const Color(0x0F39D98A)
+    ..strokeWidth = 1.5;
+  for (var x = r.left; x < r.right; x += 32) {
+    c.drawLine(Offset(x, r.top), Offset(x, r.bottom), grid);
+  }
+  for (var y = r.top; y < r.bottom; y += 32) {
+    c.drawLine(Offset(r.left, y), Offset(r.right, y), grid);
+  }
+}
+
+/// A glowing ECG trace across [r], [beats] heartbeats long.
+void _ecg(Canvas c, Rect r, double beats, double amplitude) {
+  final path = Path();
+  for (var x = r.left; x <= r.right; x += 2) {
+    final phase = ((x - r.left) / r.width * beats + 0.55) % 1;
+    final y = r.center.dy - GameSession.ecgWave(phase) * amplitude;
+    if (x == r.left) {
+      path.moveTo(x, y);
+    } else {
+      path.lineTo(x, y);
+    }
+  }
+  for (final (width, blur, alpha) in [(26.0, 18.0, 0.35), (12.0, 6.0, 0.6), (5.0, 0.0, 1.0)]) {
+    final paint = Paint()
+      ..color = _green.withValues(alpha: alpha)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = width
+      ..strokeJoin = StrokeJoin.round
+      ..strokeCap = StrokeCap.round;
+    if (blur > 0) paint.maskFilter = MaskFilter.blur(BlurStyle.normal, blur);
+    c.drawPath(path, paint);
+  }
+  c.drawPath(
+    path,
+    Paint()
+      ..color = const Color(0xCCEFFFF6)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.6,
+  );
+}
+
+/// A steel scalpel, tip at the origin, pointing along +x.
+void _scalpel(Canvas c, double length) {
+  final s = length / 360;
+  c.scale(s);
+  c.drawRRect(
+    RRect.fromLTRBR(70, -14, 360, 14, const Radius.circular(8)).shift(const Offset(18, 26)),
+    Paint()
+      ..color = const Color(0x88000000)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14),
+  );
+  final blade = Path()
+    ..moveTo(0, 0)
+    ..quadraticBezierTo(26, -30, 84, -16)
+    ..lineTo(84, 12)
+    ..quadraticBezierTo(40, 12, 0, 0)
+    ..close();
+  c.drawPath(
+    blade,
+    Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFFFFFFFF), Color(0xFFC9D2D8), Color(0xFF6E7A82)],
+      ).createShader(const Rect.fromLTWH(0, -30, 84, 42)),
+  );
+  // Sharp edge highlight.
+  c.drawPath(
+    Path()
+      ..moveTo(2, 0)
+      ..quadraticBezierTo(40, 11, 82, 11),
+    Paint()
+      ..color = const Color(0xCCFFFFFF)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2,
+  );
+  final handle = RRect.fromLTRBR(78, -13, 360, 13, const Radius.circular(7));
+  c.drawRRect(
+    handle,
+    Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFFF2F5F7), Color(0xFF8F9AA2), Color(0xFF4F5960), Color(0xFFB7C1C7)],
+        stops: [0, 0.45, 0.6, 1],
+      ).createShader(handle.outerRect),
+  );
+  // Grip ridges.
+  final ridge = Paint()
+    ..color = const Color(0x55000000)
+    ..strokeWidth = 2;
+  for (var x = 230.0; x < 345; x += 9) {
+    c.drawLine(Offset(x, -11), Offset(x, 11), ridge);
+  }
 }
 
 void _paintIcon(Canvas c, double size) {
   c.scale(size / 512);
   const square = Rect.fromLTWH(0, 0, 512, 512);
-  c.drawRect(
-    square,
-    Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [Color(0xFF2BB5A6), Color(0xFF0B4F44)],
-      ).createShader(square),
-  );
-  c.drawCircle(const Offset(256, 262), 205, Paint()..color = const Color(0x22FFFFFF));
+  _background(c, square);
+  _ecg(c, const Rect.fromLTRB(-20, 210, 532, 330), 1.6, 150);
   c.save();
-  c.translate(256, 268);
-  c.scale(1.3);
-  _paintHead(c);
+  c.translate(150, 380);
+  c.rotate(-0.72);
+  _scalpel(c, 400);
   c.restore();
 }
 
 void _paintFeatureGraphic(Canvas c) {
   const rect = Rect.fromLTWH(0, 0, 1024, 500);
-  c.drawRect(
-    rect,
-    Paint()
-      ..shader = const LinearGradient(
-        colors: [Color(0xFF1B7A6C), Color(0xFF0B2B25)],
-      ).createShader(rect),
-  );
-  c.drawCircle(const Offset(250, 250), 215, Paint()..color = const Color(0x1FFFFFFF));
+  _background(c, rect, center: const Alignment(-0.5, 0));
+  _ecg(c, const Rect.fromLTRB(-20, 300, 1044, 400), 4.2, 130);
   c.save();
-  c.translate(250, 262);
-  c.scale(1.3);
-  _paintHead(c);
+  c.translate(120, 330);
+  c.rotate(-0.55);
+  _scalpel(c, 360);
   c.restore();
 
-  void text(String s, Offset at, double size, FontWeight weight, Color color) {
+  void text(String s, Offset at, double size, FontWeight weight, Color color,
+      {double spacing = 0}) {
     final tp = TextPainter(
       text: TextSpan(
         text: s,
-        style: TextStyle(fontFamily: 'Roboto', fontSize: size, fontWeight: weight, color: color),
+        style: TextStyle(
+          fontFamily: 'Roboto',
+          fontSize: size,
+          fontWeight: weight,
+          color: color,
+          letterSpacing: spacing,
+          shadows: const [Shadow(color: Color(0xAA000000), blurRadius: 12)],
+        ),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
     tp.paint(c, at);
   }
 
-  text('Steady Doc', const Offset(496, 126), 92, FontWeight.w900, Colors.white);
-  text('Steady-hand surgery game', const Offset(506, 248), 36, FontWeight.w500,
-      const Color(0xDDFFFFFF));
-  text('Made for the S Pen', const Offset(506, 296), 36, FontWeight.w500,
-      const Color(0xFF9FF2E4));
-
-  // Little badges: x-ray, incision, stitches.
-  final badges = [const Offset(540, 410), const Offset(640, 410), const Offset(740, 410)];
-  for (final b in badges) {
-    c.drawCircle(b, 38, Paint()..color = const Color(0x33FFFFFF));
-  }
-  // X-ray lens with ribs.
-  c.drawCircle(badges[0], 30, Paint()..color = const Color(0xFF0B1E3A));
-  final bone = Paint()
-    ..color = const Color(0xFFBFD9F2)
-    ..style = PaintingStyle.stroke
-    ..strokeWidth = 4
-    ..strokeCap = StrokeCap.round;
-  for (var i = -1; i <= 1; i++) {
-    c.drawArc(Rect.fromCircle(center: badges[0] + Offset(0, i * 12.0 + 14), radius: 18),
-        math.pi * 1.15, math.pi * 0.7, false, bone);
-  }
-  // Dotted incision.
-  final dot = Paint()..color = Colors.white;
-  for (var i = -2; i <= 2; i++) {
-    c.drawCircle(badges[1] + Offset(i * 10.0, math.sin(i * 0.9) * 8), 3.5, dot);
-  }
-  // Zigzag stitches.
-  final thread = Paint()
-    ..color = const Color(0xFFB39DDB)
-    ..style = PaintingStyle.stroke
-    ..strokeWidth = 5
-    ..strokeJoin = StrokeJoin.round;
-  final zig = Path()..moveTo(badges[2].dx - 22, badges[2].dy - 8);
-  for (var i = 0; i < 4; i++) {
-    zig.lineTo(badges[2].dx - 22 + (i + 1) * 11, badges[2].dy + (i.isEven ? 10 : -8));
-  }
-  c.drawPath(zig, thread);
+  text('STEADY DOC', const Offset(440, 70), 78, FontWeight.w900, Colors.white, spacing: 6);
+  text('Realistic surgery simulator', const Offset(446, 170), 34, FontWeight.w500,
+      const Color(0xFFCFE8E1));
+  text('Made for the S Pen', const Offset(446, 214), 34, FontWeight.w500, _green);
+  text('HR 72   SpO2 99%   NIBP 118/76', const Offset(446, 430), 24, FontWeight.w500,
+      const Color(0x9939D98A), spacing: 1);
 }
 
 void main() {
